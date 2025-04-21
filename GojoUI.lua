@@ -1,4 +1,4 @@
--- GojoUI Library by DevEx | Ultra Modern UI Solution
+-- GojoUI Library (Исправленная версия, встроенная в скрипт)
 local GojoUI = {}
 
 -- Services
@@ -345,13 +345,13 @@ function GojoUI:CreateWindow(title)
                     isDragging = false
                 end
             end)
-        end
+        end)
     end)
 
     titleBar.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
-        end
+        end)
     end)
 
     table.insert(connections, UserInputService.InputChanged:Connect(function(input)
@@ -852,408 +852,6 @@ function GojoUI:CreateWindow(title)
                 return slider
             end
 
-            -- Full ColorPicker element (with HSV)
-            function section:NewColorPicker(name, defaultColor, callback)
-                local colorPicker = {}
-                local value = defaultColor or Color3.fromRGB(255, 255, 255)
-                local isOpen = false
-                local h, s, v = value:ToHSV()
-
-                local pickerButton = Instance.new("TextButton")
-                pickerButton.Name = name
-                pickerButton.Size = UDim2.new(1, -20, 0, 45)
-                pickerButton.Position = UDim2.new(0, 10, 0, 40)
-                pickerButton.BackgroundColor3 = config.darkColor
-                pickerButton.Text = ""
-                pickerButton.Parent = sectionFrame
-
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = config.cornerRadius
-                corner.Parent = pickerButton
-
-                local title = Instance.new("TextLabel")
-                title.Name = "Title"
-                title.Size = UDim2.new(0.7, 0, 1, 0)
-                title.Position = UDim2.new(0, 15, 0, 0)
-                title.BackgroundTransparency = 1
-                title.Text = name
-                title.TextColor3 = config.textColor
-                title.TextXAlignment = Enum.TextXAlignment.Left
-                title.Font = config.font
-                title.TextSize = 15
-                title.Parent = pickerButton
-
-                local colorIndicator = Instance.new("Frame")
-                colorIndicator.Name = "ColorIndicator"
-                colorIndicator.Size = UDim2.new(0, 24, 0, 24)
-                colorIndicator.Position = UDim2.new(1, -60, 0.5, -12)
-                colorIndicator.BackgroundColor3 = value
-                colorIndicator.Parent = pickerButton
-
-                local indicatorCorner = Instance.new("UICorner")
-                indicatorCorner.CornerRadius = UDim.new(0, 4)
-                indicatorCorner.Parent = colorIndicator
-
-                local pickerPanel = Instance.new("Frame")
-                pickerPanel.Name = "PickerPanel"
-                pickerPanel.Size = UDim2.new(1, -20, 0, 0)
-                pickerPanel.Position = UDim2.new(0, 10, 0, 45)
-                pickerPanel.BackgroundColor3 = config.lightColor
-                pickerPanel.Visible = false
-                pickerPanel.Parent = sectionFrame
-
-                local pickerCorner = Instance.new("UICorner")
-                pickerCorner.CornerRadius = config.cornerRadius
-                pickerCorner.Parent = pickerPanel
-
-                -- Saturation and Value (SV) picker
-                local svPicker = Instance.new("Frame")
-                svPicker.Name = "SVPicker"
-                svPicker.Size = UDim2.new(0, 200, 0, 150)
-                svPicker.Position = UDim2.new(0, 10, 0, 10)
-                svPicker.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-                svPicker.Parent = pickerPanel
-
-                local svCorner = Instance.new("UICorner")
-                svCorner.CornerRadius = UDim.new(0, 4)
-                svCorner.Parent = svPicker
-
-                local satGradient = Instance.new("UIGradient")
-                satGradient.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                    ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1))
-                })
-                satGradient.Rotation = 0
-                satGradient.Parent = svPicker
-
-                local valGradient = Instance.new("UIGradient")
-                valGradient.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-                })
-                valGradient.Transparency = NumberSequence.new({
-                    NumberSequenceKeypoint.new(0, 0),
-                    NumberSequenceKeypoint.new(1, 1)
-                })
-                valGradient.Rotation = 90
-                valGradient.Parent = svPicker
-
-                local svHandle = Instance.new("Frame")
-                svHandle.Size = UDim2.new(0, 8, 0, 8)
-                svHandle.Position = UDim2.new(s, -4, 1 - v, -4)
-                svHandle.BackgroundColor3 = config.textColor
-                svHandle.BorderSizePixel = 2
-                svHandle.BorderColor3 = Color3.fromRGB(0, 0, 0)
-                svHandle.Parent = svPicker
-
-                local svHandleCorner = Instance.new("UICorner")
-                svHandleCorner.CornerRadius = UDim.new(1, 0)
-                svHandleCorner.Parent = svHandle
-
-                -- Hue picker
-                local hueBar = Instance.new("Frame")
-                hueBar.Name = "HueBar"
-                hueBar.Size = UDim2.new(1, -230, 0, 20)
-                hueBar.Position = UDim2.new(0, 220, 0, 10)
-                hueBar.Parent = pickerPanel
-
-                local hueGradient = Instance.new("UIGradient")
-                hueGradient.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-                    ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
-                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
-                    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-                    ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
-                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-                })
-                hueGradient.Parent = hueBar
-
-                local hueCorner = Instance.new("UICorner")
-                hueCorner.CornerRadius = UDim.new(0, 4)
-                hueCorner.Parent = hueBar
-
-                local hueHandle = Instance.new("Frame")
-                hueHandle.Size = UDim2.new(0, 4, 1, 4)
-                hueHandle.Position = UDim2.new(h, -2, 0, -2)
-                hueHandle.BackgroundColor3 = config.textColor
-                hueHandle.Parent = hueBar
-
-                local hueHandleCorner = Instance.new("UICorner")
-                hueHandleCorner.CornerRadius = UDim.new(1, 0)
-                hueHandleCorner.Parent = hueHandle
-
-                local draggingHue = false
-                local draggingSV = false
-
-                local function updateHue(input)
-                    local relativeX = (input.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X
-                    relativeX = math.clamp(relativeX, 0, 1)
-                    h = relativeX
-                    value = Color3.fromHSV(h, s, v)
-                    svPicker.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-                    satGradient.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                        ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1))
-                    })
-                    colorIndicator.BackgroundColor3 = value
-                    hueHandle.Position = UDim2.new(h, -2, 0, -2)
-                    pcall(callback, value)
-                end
-
-                local function updateSV(input)
-                    local relativeX = (input.Position.X - svPicker.AbsolutePosition.X) / svPicker.AbsoluteSize.X
-                    local relativeY = (input.Position.Y - svPicker.AbsolutePosition.Y) / svPicker.AbsoluteSize.Y
-                    s = math.clamp(relativeX, 0, 1)
-                    v = 1 - math.clamp(relativeY, 0, 1)
-                    value = Color3.fromHSV(h, s, v)
-                    colorIndicator.BackgroundColor3 = value
-                    svHandle.Position = UDim2.new(s, -4, 1 - v, -4)
-                    pcall(callback, value)
-                end
-
-                hueBar.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingHue = true
-                        updateHue(input)
-                    end
-                end)
-
-                svPicker.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingSV = true
-                        updateSV(input)
-                    end
-                end)
-
-                table.insert(connections, UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        draggingHue = false
-                        draggingSV = false
-                    end
-                end))
-
-                table.insert(connections, UserInputService.InputChanged:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseMovement then
-                        if draggingHue then
-                            updateHue(input)
-                        elseif draggingSV then
-                            updateSV(input)
-                        end
-                    end
-                end))
-
-                pickerButton.MouseButton1Click:Connect(function()
-                    isOpen = not isOpen
-                    pickerPanel.Visible = isOpen
-                    TweenService:Create(pickerPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, isOpen and 170 or 0)}):Play()
-                end)
-
-                function colorPicker:SetValue(newColor)
-                    value = newColor
-                    h, s, v = value:ToHSV()
-                    colorIndicator.BackgroundColor3 = value
-                    hueHandle.Position = UDim2.new(h, -2, 0, -2)
-                    svHandle.Position = UDim2.new(s, -4, 1 - v, -4)
-                    svPicker.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-                    satGradient.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                        ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1))
-                    })
-                    pcall(callback, value)
-                end
-
-                applyButtonEffects(pickerButton, config.accentColor)
-
-                return colorPicker
-            end
-
-            -- TextBox element
-            function section:NewTextBox(name, placeholder, callback)
-                local textBox = {}
-                local value = ""
-
-                local textBoxFrame = Instance.new("Frame")
-                textBoxFrame.Name = name
-                textBoxFrame.Size = UDim2.new(1, -20, 0, 45)
-                textBoxFrame.Position = UDim2.new(0, 10, 0, 40)
-                textBoxFrame.BackgroundColor3 = config.darkColor
-                textBoxFrame.Parent = sectionFrame
-
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = config.cornerRadius
-                corner.Parent = textBoxFrame
-
-                local title = Instance.new("TextLabel")
-                title.Name = "Title"
-                title.Size = UDim2.new(0.7, 0, 1, 0)
-                title.Position = UDim2.new(0, 15, 0, 0)
-                title.BackgroundTransparency = 1
-                title.Text = name
-                title.TextColor3 = config.textColor
-                title.TextXAlignment = Enum.TextXAlignment.Left
-                title.Font = config.font
-                title.TextSize = 15
-                title.Parent = textBoxFrame
-
-                local inputBox = Instance.new("TextBox")
-                inputBox.Size = UDim2.new(0, 100, 0, 24)
-                inputBox.Position = UDim2.new(1, -110, 0.5, -12)
-                inputBox.BackgroundColor3 = config.lightColor
-                inputBox.Text = placeholder or ""
-                inputBox.TextColor3 = config.textColor
-                inputBox.Font = config.font
-                inputBox.TextSize = 14
-                inputBox.ClearTextOnFocus = false
-                inputBox.Parent = textBoxFrame
-
-                local inputCorner = Instance.new("UICorner")
-                inputCorner.CornerRadius = UDim.new(0, 4)
-                inputCorner.Parent = inputBox
-
-                inputBox.FocusLost:Connect(function(enterPressed)
-                    if enterPressed then
-                        value = inputBox.Text
-                        pcall(callback, value)
-                    end
-                end)
-
-                function textBox:SetValue(newValue)
-                    value = newValue
-                    inputBox.Text = value
-                    pcall(callback, value)
-                end
-
-                return textBox
-            end
-
-            -- Dropdown element
-            function section:NewDropdown(name, options, defaultOption, callback)
-                local dropdown = {}
-                local value = defaultOption or options[1]
-                local isOpen = false
-
-                local dropdownButton = Instance.new("TextButton")
-                dropdownButton.Name = name
-                dropdownButton.Size = UDim2.new(1, -20, 0, 45)
-                dropdownButton.Position = UDim2.new(0, 10, 0, 40)
-                dropdownButton.BackgroundColor3 = config.darkColor
-                dropdownButton.Text = ""
-                dropdownButton.Parent = sectionFrame
-
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = config.cornerRadius
-                corner.Parent = dropdownButton
-
-                local title = Instance.new("TextLabel")
-                title.Name = "Title"
-                title.Size = UDim2.new(0.7, 0, 1, 0)
-                title.Position = UDim2.new(0, 15, 0, 0)
-                title.BackgroundTransparency = 1
-                title.Text = name
-                title.TextColor3 = config.textColor
-                title.TextXAlignment = Enum.TextXAlignment.Left
-                title.Font = config.font
-                title.TextSize = 15
-                title.Parent = dropdownButton
-
-                local selectedLabel = Instance.new("TextLabel")
-                selectedLabel.Name = "Selected"
-                selectedLabel.Size = UDim2.new(0, 100, 0, 24)
-                selectedLabel.Position = UDim2.new(1, -110, 0.5, -12)
-                selectedLabel.BackgroundColor3 = config.lightColor
-                selectedLabel.Text = value
-                selectedLabel.TextColor3 = config.textColor
-                selectedLabel.Font = config.font
-                selectedLabel.TextSize = 14
-                selectedLabel.TextXAlignment = Enum.TextXAlignment.Center
-                selectedLabel.Parent = dropdownButton
-
-                local selectedCorner = Instance.new("UICorner")
-                selectedCorner.CornerRadius = UDim.new(0, 4)
-                selectedCorner.Parent = selectedLabel
-
-                local dropdownPanel = Instance.new("Frame")
-                dropdownPanel.Name = "DropdownPanel"
-                dropdownPanel.Size = UDim2.new(1, -20, 0, 0)
-                dropdownPanel.Position = UDim2.new(0, 10, 0, 45)
-                dropdownPanel.BackgroundColor3 = config.lightColor
-                dropdownPanel.Visible = false
-                dropdownPanel.Parent = sectionFrame
-
-                local dropdownCorner = Instance.new("UICorner")
-                dropdownCorner.CornerRadius = config.cornerRadius
-                dropdownCorner.Parent = dropdownPanel
-
-                local dropdownList = Instance.new("ScrollingFrame")
-                dropdownList.Size = UDim2.new(1, 0, 1, 0)
-                dropdownList.BackgroundTransparency = 1
-                dropdownList.ScrollBarThickness = 4
-                dropdownList.ScrollBarImageColor3 = config.accentColor
-                dropdownList.CanvasSize = UDim2.new(0, 0, 0, 0)
-                dropdownList.Parent = dropdownPanel
-
-                local listLayout = Instance.new("UIListLayout")
-                listLayout.Parent = dropdownList
-                listLayout.Padding = UDim.new(0, 5)
-
-                listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                    dropdownList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
-                end)
-
-                -- Populate dropdown options
-                for _, option in ipairs(options) do
-                    local optionButton = Instance.new("TextButton")
-                    optionButton.Size = UDim2.new(1, -10, 0, 30)
-                    optionButton.BackgroundColor3 = config.darkColor
-                    optionButton.Text = tostring(option)
-                    optionButton.TextColor3 = config.textColor
-                    optionButton.Font = config.font
-                    optionButton.TextSize = 14
-                    optionButton.Parent = dropdownList
-
-                    local optionCorner = Instance.new("UICorner")
-                    optionCorner.CornerRadius = UDim.new(0, 4)
-                    optionCorner.Parent = optionButton
-
-                    optionButton.MouseButton1Click:Connect(function()
-                        value = option
-                        selectedLabel.Text = tostring(value)
-                        isOpen = false
-                        dropdownPanel.Visible = false
-                        TweenService:Create(dropdownPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, 0)}):Play()
-                        pcall(callback, value)
-                    end)
-
-                    optionButton.MouseEnter:Connect(function()
-                        TweenService:Create(optionButton, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor}):Play()
-                    end)
-
-                    optionButton.MouseLeave:Connect(function()
-                        TweenService:Create(optionButton, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor}):Play()
-                    end)
-                end
-
-                dropdownButton.MouseButton1Click:Connect(function()
-                    isOpen = not isOpen
-                    dropdownPanel.Visible = isOpen
-                    local targetHeight = isOpen and math.min(#options * 35, 140) or 0
-                    TweenService:Create(dropdownPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, targetHeight)}):Play()
-                end)
-
-                function dropdown:SetValue(newValue)
-                    if table.find(options, newValue) then
-                        value = newValue
-                        selectedLabel.Text = tostring(value)
-                        pcall(callback, value)
-                    end
-                end
-
-                applyButtonEffects(dropdownButton, config.accentColor)
-
-                return dropdown
-            end
-
             return section
         end
 
@@ -1263,4 +861,158 @@ function GojoUI:CreateWindow(title)
     return window
 end
 
-return GojoUI
+-- Конец библиотеки GojoUI
+
+-- Основной скрипт с Walkspeed, JumpPower и ESP
+-- Создание главного окна
+local Window = GojoUI:CreateWindow("Player Tools UI")
+
+-- Создание вкладок
+local MainTab = Window:NewTab("Player", "rbxassetid://7072706764")
+local ESPTab = Window:NewTab("ESP", "rbxassetid://7072721682")
+
+-- Создание секций
+local PlayerSection = MainTab:NewSection("Player Settings")
+local ESPSection = ESPTab:NewSection("ESP Controls")
+
+-- Переменные для настроек
+local defaultWalkspeed = 16
+local defaultJumpPower = 50
+local walkspeed = defaultWalkspeed
+local jumpPower = defaultJumpPower
+local espEnabled = false
+local espBoxes = {}
+
+-- Сервисы
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Функция для установки Walkspeed
+local function setWalkspeed(value)
+    walkspeed = value
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = walkspeed
+    end
+end
+
+-- Функция для установки JumpPower
+local function setJumpPower(value)
+    jumpPower = value
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = jumpPower
+    end
+end
+
+-- Обновление характеристик при респавне
+LocalPlayer.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.WalkSpeed = walkspeed
+    humanoid.JumpPower = jumpPower
+end)
+
+-- Элемент: Слайдер для Walkspeed
+local walkspeedSlider = PlayerSection:NewSlider("Walkspeed", 0, 100, defaultWalkspeed, function(value)
+    setWalkspeed(value)
+    Window:Notification("Walkspeed", "Set to " .. value, 2)
+end)
+
+-- Элемент: Слайдер для JumpPower
+local jumpPowerSlider = PlayerSection:NewSlider("JumpPower", 0, 200, defaultJumpPower, function(value)
+    setJumpPower(value)
+    Window:Notification("JumpPower", "Set to " .. value, 2)
+end)
+
+-- Элемент: Кнопка для сброса настроек
+PlayerSection:NewButton("Reset Settings", "Reset Walkspeed and JumpPower to default", function()
+    walkspeed = defaultWalkspeed
+    jumpPower = defaultJumpPower
+    setWalkspeed(walkspeed)
+    setJumpPower(jumpPower)
+    walkspeedSlider:SetValue(walkspeed)
+    jumpPowerSlider:SetValue(jumpPower)
+    Window:Notification("Settings", "Walkspeed and JumpPower reset!", 3)
+end)
+
+-- ESP Функционал
+local function createESPBox(player)
+    if player == LocalPlayer or not player.Character then return end
+
+    local character = player.Character
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    -- Создание бокса для ESP
+    local box = Instance.new("BoxHandleAdornment")
+    box.Name = "ESPBox"
+    box.Size = character:GetExtentsSize() * 1.1 -- Чуть больше размера персонажа
+    box.Adornee = humanoidRootPart
+    box.AlwaysOnTop = true
+    box.ZIndex = 5
+    box.Transparency = 0.5
+    box.Color3 = Color3.fromRGB(255, 0, 0) -- Красный цвет для бокса
+    box.Parent = game:GetService("CoreGui")
+
+    espBoxes[player] = box
+
+    -- Обновление позиции бокса
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not espEnabled then
+            box:Destroy()
+            espBoxes[player] = nil
+            connection:Disconnect()
+        else
+            box.Size = player.Character:GetExtentsSize() * 1.1
+        end
+    end)
+end
+
+-- Включение/выключение ESP
+local function toggleESP(state)
+    espEnabled = state
+    if not espEnabled then
+        -- Удаление всех боксов
+        for _, box in pairs(espBoxes) do
+            if box then box:Destroy() end
+        end
+        table.clear(espBoxes)
+    else
+        -- Создание боксов для всех игроков
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                createESPBox(player)
+            end
+        end
+    end
+    Window:Notification("ESP", espEnabled and "ESP Enabled!" or "ESP Disabled!", 2)
+end
+
+-- Создание ESP боксов для новых игроков
+Players.PlayerAdded:Connect(function(player)
+    if espEnabled and player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function()
+            createESPBox(player)
+        end)
+    end
+end)
+
+-- Удаление ESP боксов, когда игрок покидает игру
+Players.PlayerRemoving:Connect(function(player)
+    if espBoxes[player] then
+        espBoxes[player]:Destroy()
+        espBoxes[player] = nil
+    end
+end)
+
+-- Элемент: Переключатель для ESP
+local espToggle = ESPSection:NewToggle("Enable ESP", "Show player boxes", toggleESP)
+
+-- Элемент: Метка для статуса ESP
+local espStatusLabel = ESPSection:NewLabel("ESP Status: Disabled")
+ESPSection:NewButton("Update Status", "Refresh ESP status", function()
+    espStatusLabel:Update("ESP Status: " .. (espEnabled and "Enabled" or "Disabled"))
+end)
+
+-- Уведомление при загрузке
+Window:Notification("Welcome", "Player Tools UI loaded! Press F9 to toggle UI.", 5)
