@@ -13,16 +13,23 @@ local config = {
     titleFont = Enum.Font.GothamBold,
     cornerRadius = UDim.new(0, 8),
     animationSpeed = 0.15,
-    loadingDuration = 1.5
+    loadingDuration = 1.5,
+    theme = "Dark", -- Добавлена поддержка тем (Dark/Light)
+    toggleKey = Enum.KeyCode.F9 -- Горячая клавиша для открытия/закрытия
 }
+
+-- Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
 
 -- Create loading screen
 local function CreateLoader()
     local loaderUI = Instance.new("ScreenGui")
     loaderUI.Name = "GojoUILoader"
-    loaderUI.Parent = game:GetService("CoreGui")
     loaderUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     loaderUI.ResetOnSpawn = false
+    loaderUI.Parent = CoreGui
 
     -- Background
     local background = Instance.new("Frame")
@@ -94,7 +101,7 @@ local function CreateLoader()
 
     -- Animation
     local tweenInfo = TweenInfo.new(config.loadingDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-    game:GetService("TweenService"):Create(progressFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)}):Play()
+    TweenService:Create(progressFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)}):Play()
 
     -- Simulate loading steps
     local steps = {
@@ -108,16 +115,20 @@ local function CreateLoader()
     local stepInterval = config.loadingDuration / #steps
     for i, text in ipairs(steps) do
         task.delay((i - 1) * stepInterval, function()
-            status.Text = text
+            if status and status.Parent then
+                status.Text = text
+            end
         end)
     end
 
     -- Cleanup
     task.delay(config.loadingDuration, function()
-        local fadeOut = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-        game:GetService("TweenService"):Create(background, fadeOut, {BackgroundTransparency = 1}):Play()
-        task.wait(0.3)
-        loaderUI:Destroy()
+        if loaderUI and loaderUI.Parent then
+            local fadeOut = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            TweenService:Create(background, fadeOut, {BackgroundTransparency = 1}):Play()
+            task.wait(0.3)
+            loaderUI:Destroy()
+        end
     end)
 
     return loaderUI
@@ -127,19 +138,20 @@ end
 function GojoUI:CreateWindow(title)
     -- Show loading screen
     CreateLoader()
-    task.wait(config.loadingDuration)
 
     local window = {}
-    local dragInput, dragStart, startPos
-    local tabs = {}
+    local connections = {}
     local notifications = {}
+    local isDragging = false
+    local isMinimized = false
+    local dragInput, dragStart, startPos
 
     -- Main UI container
     local ui = Instance.new("ScreenGui")
     ui.Name = "GojoUI"
-    ui.Parent = game:GetService("CoreGui")
     ui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ui.ResetOnSpawn = false
+    ui.Parent = CoreGui
 
     -- Main frame
     local mainFrame = Instance.new("Frame")
@@ -155,19 +167,25 @@ function GojoUI:CreateWindow(title)
     corner.CornerRadius = config.cornerRadius
     corner.Parent = mainFrame
 
-    -- Drop shadow
-    local shadow = Instance.new("ImageLabel")
+    -- Enhanced drop shadow
+    local shadow = Instance.new("Frame")
     shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 12, 1, 12)
-    shadow.Position = UDim2.new(0, -6, 0, -6)
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0, -10, 0, -10)
     shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.8
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
     shadow.ZIndex = -1
     shadow.Parent = mainFrame
+
+    local shadowGradient = Instance.new("UIGradient")
+    shadowGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+    })
+    shadowGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.7),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    shadowGradient.Parent = shadow
 
     -- Title bar
     local titleBar = Instance.new("Frame")
@@ -184,7 +202,7 @@ function GojoUI:CreateWindow(title)
     -- Title text
     local titleText = Instance.new("TextLabel")
     titleText.Name = "Title"
-    titleText.Size = UDim2.new(1, -50, 1, 0)
+    titleText.Size = UDim2.new(1, -80, 1, 0)
     titleText.Position = UDim2.new(0, 15, 0, 0)
     titleText.BackgroundTransparency = 1
     titleText.Text = title
@@ -193,6 +211,22 @@ function GojoUI:CreateWindow(title)
     titleText.Font = config.titleFont
     titleText.TextSize = 18
     titleText.Parent = titleBar
+
+    -- Minimize button
+    local minimizeButton = Instance.new("TextButton")
+    minimizeButton.Name = "MinimizeButton"
+    minimizeButton.Size = UDim2.new(0, 32, 0, 32)
+    minimizeButton.Position = UDim2.new(1, -74, 0.5, -16)
+    minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 180, 80)
+    minimizeButton.Text = "−"
+    minimizeButton.TextColor3 = config.textColor
+    minimizeButton.TextSize = 24
+    minimizeButton.Font = config.titleFont
+    minimizeButton.Parent = titleBar
+
+    local minimizeCorner = Instance.new("UICorner")
+    minimizeCorner.CornerRadius = UDim.new(1, 0)
+    minimizeCorner.Parent = minimizeButton
 
     -- Close button
     local closeButton = Instance.new("TextButton")
@@ -210,21 +244,24 @@ function GojoUI:CreateWindow(title)
     closeCorner.CornerRadius = UDim.new(1, 0)
     closeCorner.Parent = closeButton
 
-    -- Close button effects
-    closeButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(
-            closeButton,
-            TweenInfo.new(config.animationSpeed),
-            {BackgroundColor3 = Color3.fromRGB(255, 120, 120)}
-        ):Play()
-    end)
+    -- Button effects
+    local function applyButtonEffects(button, hoverColor)
+        button.MouseEnter:Connect(function()
+            TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = hoverColor, Size = UDim2.new(0, 34, 0, 34)}):Play()
+        end)
+        button.MouseLeave:Connect(function()
+            TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = button.BackgroundColor3, Size = UDim2.new(0, 32, 0, 32)}):Play()
+        end)
+    end
 
-    closeButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(
-            closeButton,
-            TweenInfo.new(config.animationSpeed),
-            {BackgroundColor3 = config.errorColor}
-        ):Play()
+    applyButtonEffects(closeButton, Color3.fromRGB(255, 120, 120))
+    applyButtonEffects(minimizeButton, Color3.fromRGB(255, 200, 120))
+
+    -- Minimize functionality
+    minimizeButton.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        local targetSize = isMinimized and UDim2.new(0, 500, 0, 42) or UDim2.new(0, 500, 0, 600)
+        TweenService:Create(mainFrame, TweenInfo.new(config.animationSpeed), {Size = targetSize}):Play()
     end)
 
     closeButton.MouseButton1Click:Connect(function()
@@ -256,22 +293,22 @@ function GojoUI:CreateWindow(title)
     local function updateDrag(input)
         local delta = input.Position - dragStart
         mainFrame.Position = UDim2.new(
-            startPos.X.Scale, 
+            startPos.X.Scale,
             startPos.X.Offset + delta.X,
-            startPos.Y.Scale, 
+            startPos.Y.Scale,
             startPos.Y.Offset + delta.Y
         )
     end
 
     titleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not isMinimized then
+            isDragging = true
             dragStart = input.Position
             startPos = mainFrame.Position
-            
+
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
+                    isDragging = false
                 end
             end)
         end
@@ -283,18 +320,25 @@ function GojoUI:CreateWindow(title)
         end
     end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
+    table.insert(connections, UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and isDragging then
             updateDrag(input)
         end
-    end)
+    end))
+
+    -- Toggle visibility with hotkey
+    table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == config.toggleKey then
+            ui.Enabled = not ui.Enabled
+        end
+    end))
 
     -- Window methods
     function window:Notification(title, message, duration)
         duration = duration or 3
-        
+
         local notification = Instance.new("Frame")
-        notification.Name = "Notification_"..tostring(#notifications + 1)
+        notification.Name = "Notification_" .. tostring(#notifications + 1)
         notification.Size = UDim2.new(0, 300, 0, 100)
         notification.Position = UDim2.new(1, -320, 1, -120 - (#notifications * 110))
         notification.BackgroundColor3 = config.darkColor
@@ -304,18 +348,18 @@ function GojoUI:CreateWindow(title)
         corner.CornerRadius = config.cornerRadius
         corner.Parent = notification
 
-        local shadow = Instance.new("ImageLabel")
+        local shadow = Instance.new("Frame")
         shadow.Name = "Shadow"
         shadow.Size = UDim2.new(1, 12, 1, 12)
         shadow.Position = UDim2.new(0, -6, 0, -6)
         shadow.BackgroundTransparency = 1
-        shadow.Image = "rbxassetid://1316045217"
-        shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-        shadow.ImageTransparency = 0.8
-        shadow.ScaleType = Enum.ScaleType.Slice
-        shadow.SliceCenter = Rect.new(10, 10, 118, 118)
         shadow.ZIndex = -1
         shadow.Parent = notification
+
+        local shadowGradient = Instance.new("UIGradient")
+        shadowGradient.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
+        shadowGradient.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(1, 1)})
+        shadowGradient.Parent = shadow
 
         local titleLabel = Instance.new("TextLabel")
         titleLabel.Name = "Title"
@@ -340,37 +384,35 @@ function GojoUI:CreateWindow(title)
         messageLabel.TextSize = 14
         messageLabel.TextXAlignment = Enum.TextXAlignment.Left
         messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+        messageLabel.TextWrapped = true
         messageLabel.Parent = notification
 
         table.insert(notifications, notification)
 
         -- Animate in
         notification.Position = UDim2.new(1, 20, 1, -120 - (#notifications * 110))
-        game:GetService("TweenService"):Create(
-            notification,
-            TweenInfo.new(0.3),
-            {Position = UDim2.new(1, -320, 1, -120 - (#notifications * 110))}
-        ):Play()
+        TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(1, -320, 1, -120 - (#notifications * 110))}):Play()
 
         -- Auto remove after duration
         task.delay(duration, function()
-            game:GetService("TweenService"):Create(
-                notification,
-                TweenInfo.new(0.3),
-                {Position = UDim2.new(1, 20, notification.Position.Y.Scale, notification.Position.Y.Offset)}
-            ):Play()
-            task.wait(0.3)
-            notification:Destroy()
-            table.remove(notifications, table.find(notifications, notification))
-            
-            -- Update positions of remaining notifications
-            for i, notif in ipairs(notifications) do
-                notif.Position = UDim2.new(1, -320, 1, -120 - (i * 110))
+            if notification and notification.Parent then
+                TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(1, 20, notification.Position.Y.Scale, notification.Position.Y.Offset)}):Play()
+                task.wait(0.3)
+                notification:Destroy()
+                table.remove(notifications, table.find(notifications, notification))
+
+                -- Update positions of remaining notifications
+                for i, notif in ipairs(notifications) do
+                    TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(1, -320, 1, -120 - (i * 110))}):Play()
+                end
             end
         end)
     end
 
     function window:Destroy()
+        for _, connection in ipairs(connections) do
+            connection:Disconnect()
+        end
         ui:Destroy()
     end
 
@@ -399,42 +441,33 @@ function GojoUI:CreateWindow(title)
         tabContent.ScrollBarThickness = 3
         tabContent.ScrollBarImageColor3 = config.accentColor
         tabContent.Visible = false
+        tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
         tabContent.Parent = contentContainer
 
         local contentLayout = Instance.new("UIListLayout")
         contentLayout.Parent = tabContent
         contentLayout.Padding = UDim.new(0, 10)
 
+        contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 20)
+        end)
+
         -- Tab switching
         tabButton.MouseButton1Click:Connect(function()
-            -- Hide all tab contents
             for _, child in ipairs(contentContainer:GetChildren()) do
                 if child:IsA("ScrollingFrame") then
                     child.Visible = false
                 end
             end
-            
-            -- Show this tab's content
             tabContent.Visible = true
-            
-            -- Update tab buttons appearance
+
             for _, btn in ipairs(tabButtons:GetChildren()) do
                 if btn:IsA("TextButton") then
-                    btn.TextColor3 = config.textColor
-                    btn.BackgroundTransparency = 0.5
+                    TweenService:Create(btn, TweenInfo.new(config.animationSpeed), {TextColor3 = config.textColor, BackgroundTransparency = 0.5}):Play()
                 end
             end
-            
-            -- Highlight active tab
-            tabButton.TextColor3 = config.accentColor
-            tabButton.BackgroundTransparency = 0
-            
-            -- Play animation
-            game:GetService("TweenService"):Create(
-                tabButton,
-                TweenInfo.new(config.animationSpeed),
-                {TextColor3 = config.accentColor, BackgroundTransparency = 0}
-            ):Play()
+
+            TweenService:Create(tabButton, TweenInfo.new(config.animationSpeed), {TextColor3 = config.accentColor, BackgroundTransparency = 0}):Play()
         end)
 
         -- Activate first tab
@@ -458,7 +491,6 @@ function GojoUI:CreateWindow(title)
             corner.CornerRadius = config.cornerRadius
             corner.Parent = sectionFrame
 
-            -- Section title
             local sectionTitle = Instance.new("TextLabel")
             sectionTitle.Name = "Title"
             sectionTitle.Size = UDim2.new(1, -20, 0, 40)
@@ -471,7 +503,6 @@ function GojoUI:CreateWindow(title)
             sectionTitle.TextSize = 16
             sectionTitle.Parent = sectionFrame
 
-            -- Content layout
             local contentLayout = Instance.new("UIListLayout")
             contentLayout.Parent = sectionFrame
             contentLayout.Padding = UDim.new(0, 10)
@@ -497,7 +528,6 @@ function GojoUI:CreateWindow(title)
                 corner.CornerRadius = config.cornerRadius
                 corner.Parent = button
 
-                -- Tooltip for description
                 local tooltip = Instance.new("TextLabel")
                 tooltip.Name = "Tooltip"
                 tooltip.Size = UDim2.new(1, -20, 0, 0)
@@ -515,37 +545,16 @@ function GojoUI:CreateWindow(title)
                 tooltipCorner.CornerRadius = config.cornerRadius
                 tooltipCorner.Parent = tooltip
 
-                -- Hover effects
                 button.MouseEnter:Connect(function()
-                    game:GetService("TweenService"):Create(
-                        button,
-                        TweenInfo.new(config.animationSpeed),
-                        {BackgroundColor3 = config.accentColor}
-                    ):Play()
-                    
-                    -- Show tooltip
+                    TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor, Size = UDim2.new(1, -18, 0, 42)}):Play()
                     tooltip.Size = UDim2.new(1, -20, 0, 0)
                     tooltip.Visible = true
-                    game:GetService("TweenService"):Create(
-                        tooltip,
-                        TweenInfo.new(config.animationSpeed),
-                        {Size = UDim2.new(1, -20, 0, 40)}
-                    ):Play()
+                    TweenService:Create(tooltip, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, 40)}):Play()
                 end)
 
                 button.MouseLeave:Connect(function()
-                    game:GetService("TweenService"):Create(
-                        button,
-                        TweenInfo.new(config.animationSpeed),
-                        {BackgroundColor3 = config.darkColor}
-                    ):Play()
-                    
-                    -- Hide tooltip
-                    game:GetService("TweenService"):Create(
-                        tooltip,
-                        TweenInfo.new(config.animationSpeed),
-                        {Size = UDim2.new(1, -20, 0, 0)}
-                    ):Play()
+                    TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor, Size = UDim2.new(1, -20, 0, 40)}):Play()
+                    TweenService:Create(tooltip, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, 0)}):Play()
                     task.wait(config.animationSpeed)
                     tooltip.Visible = false
                 end)
@@ -596,50 +605,29 @@ function GojoUI:CreateWindow(title)
                 indicatorCorner.CornerRadius = UDim.new(1, 0)
                 indicatorCorner.Parent = toggleIndicator
 
-                -- Hover effects
                 toggleFrame.MouseEnter:Connect(function()
-                    game:GetService("TweenService"):Create(
-                        toggleFrame,
-                        TweenInfo.new(config.animationSpeed),
-                        {BackgroundColor3 = config.accentColor}
-                    ):Play()
+                    TweenService:Create(toggleFrame, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor, Size = UDim2.new(1, -18, 0, 42)}):Play()
                 end)
 
                 toggleFrame.MouseLeave:Connect(function()
-                    game:GetService("TweenService"):Create(
-                        toggleFrame,
-                        TweenInfo.new(config.animationSpeed),
-                        {BackgroundColor3 = config.darkColor}
-                    ):Play()
+                    TweenService:Create(toggleFrame, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor, Size = UDim2.new(1, -20, 0, 40)}):Play()
                 end)
 
-                -- Toggle functionality
-                toggleFrame.MouseButton1Click:Connect(function()
-                    value = not value
-                    if value then
-                        game:GetService("TweenService"):Create(
-                            toggleIndicator,
-                            TweenInfo.new(config.animationSpeed),
-                            {BackgroundColor3 = config.accentColor}
-                        ):Play()
-                    else
-                        game:GetService("TweenService"):Create(
-                            toggleIndicator,
-                            TweenInfo.new(config.animationSpeed),
-                            {BackgroundColor3 = Color3.fromRGB(80, 80, 80)}
-                        ):Play()
+                toggleFrame.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        value = not value
+                        TweenService:Create(toggleIndicator, TweenInfo.new(config.animationSpeed), {
+                            BackgroundColor3 = value and config.accentColor or Color3.fromRGB(80, 80, 80)
+                        }):Play()
+                        pcall(callback, value)
                     end
-                    pcall(callback, value)
                 end)
 
-                -- Set value method
                 function toggle:SetValue(newValue)
                     value = newValue
-                    if value then
-                        toggleIndicator.BackgroundColor3 = config.accentColor
-                    else
-                        toggleIndicator.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-                    end
+                    TweenService:Create(toggleIndicator, TweenInfo.new(config.animationSpeed), {
+                        BackgroundColor3 = value and config.accentColor or Color3.fromRGB(80, 80, 80)
+                    }):Play()
                     pcall(callback, value)
                 end
 
@@ -750,17 +738,17 @@ function GojoUI:CreateWindow(title)
                     dragging = true
                 end)
 
-                game:GetService("UserInputService").InputEnded:Connect(function(input)
+                table.insert(connections, UserInputService.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
                         dragging = false
                     end
-                end)
+                end))
 
-                game:GetService("UserInputService").InputChanged:Connect(function(input)
+                table.insert(connections, UserInputService.InputChanged:Connect(function(input)
                     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                         updateValue(input)
                     end
-                end)
+                end))
 
                 track.MouseButton1Down:Connect(function(input)
                     updateValue(input)
@@ -776,6 +764,96 @@ function GojoUI:CreateWindow(title)
                 end
 
                 return slider
+            end
+
+            -- ColorPicker element (New)
+            function section:NewColorPicker(name, defaultColor, callback)
+                local colorPicker = {}
+                local value = defaultColor or Color3.fromRGB(255, 255, 255)
+                local isOpen = false
+
+                local pickerFrame = Instance.new("Frame")
+                pickerFrame.Name = name
+                pickerFrame.Size = UDim2.new(1, -20, 0, 40)
+                pickerFrame.BackgroundColor3 = config.darkColor
+                pickerFrame.Parent = sectionFrame
+
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = config.cornerRadius
+                corner.Parent = pickerFrame
+
+                local title = Instance.new("TextLabel")
+                title.Name = "Title"
+                title.Size = UDim2.new(0.7, 0, 1, 0)
+                title.Position = UDim2.new(0, 15, 0, 0)
+                title.BackgroundTransparency = 1
+                title.Text = name
+                title.TextColor3 = config.textColor
+                title.TextXAlignment = Enum.TextXAlignment.Left
+                title.Font = config.font
+                title.TextSize = 14
+                title.Parent = pickerFrame
+
+                local colorIndicator = Instance.new("Frame")
+                colorIndicator.Name = "ColorIndicator"
+                colorIndicator.Size = UDim2.new(0, 24, 0, 24)
+                colorIndicator.Position = UDim2.new(1, -30, 0.5, -12)
+                colorIndicator.BackgroundColor3 = value
+                colorIndicator.Parent = pickerFrame
+
+                local indicatorCorner = Instance.new("UICorner")
+                indicatorCorner.CornerRadius = UDim.new(0, 4)
+                indicatorCorner.Parent = colorIndicator
+
+                local pickerPanel = Instance.new("Frame")
+                pickerPanel.Name = "PickerPanel"
+                pickerPanel.Size = UDim2.new(1, -20, 0, 0)
+                pickerPanel.Position = UDim2.new(0, 10, 0, 40)
+                pickerPanel.BackgroundColor3 = config.lightColor
+                pickerPanel.Visible = false
+                pickerPanel.Parent = sectionFrame
+
+                local pickerCorner = Instance.new("UICorner")
+                pickerCorner.CornerRadius = config.cornerRadius
+                pickerCorner.Parent = pickerPanel
+
+                local hueBar = Instance.new("Frame")
+                hueBar.Name = "HueBar"
+                hueBar.Size = UDim2.new(1, -20, 0, 20)
+                hueBar.Position = UDim2.new(0, 10, 0, 10)
+                hueBar.Parent = pickerPanel
+
+                local hueGradient = Instance.new("UIGradient")
+                hueGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+                    ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+                    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+                    ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+                })
+                hueGradient.Parent = hueBar
+
+                local hueCorner = Instance.new("UICorner")
+                hueCorner.CornerRadius = UDim.new(0, 4)
+                hueCorner.Parent = hueBar
+
+                pickerFrame.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isOpen = not isOpen
+                        pickerPanel.Visible = isOpen
+                        TweenService:Create(pickerPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, isOpen and 100 or 0)}):Play()
+                    end
+                end)
+
+                function colorPicker:SetValue(newColor)
+                    value = newColor
+                    colorIndicator.BackgroundColor3 = value
+                    pcall(callback, value)
+                end
+
+                return colorPicker
             end
 
             return section
