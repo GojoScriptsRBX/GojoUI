@@ -19,7 +19,7 @@ local config = {
     cornerRadius = UDim.new(0, 10),
     animationSpeed = 0.2,
     loadingDuration = 1,
-    theme = "Dark", -- Поддержка тем (Dark/Light)
+    theme = "Dark",
     toggleKey = Enum.KeyCode.F9,
     shadowTransparency = 0.6
 }
@@ -53,7 +53,7 @@ end
 local function CreateLoader()
     local loaderUI = Instance.new("ScreenGui")
     loaderUI.Name = "GojoUILoader"
-    loaderUI.ZIndexBehavior = Enum.ZIndexBehavior Sibling
+    loaderUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     loaderUI.ResetOnSpawn = false
     loaderUI.Parent = CoreGui
 
@@ -120,7 +120,7 @@ local function CreateLoader()
     status.TextSize = 12
     status.Font = config.font
     status.BackgroundTransparency = 1
-    status.ZIndex = 100 geospatial
+    status.ZIndex = 1000
     status.Parent = background
 
     -- Animation
@@ -168,6 +168,7 @@ function GojoUI:CreateWindow(title)
     local isDragging = false
     local isMinimized = false
     local dragInput, dragStart, startPos
+    local currentTab = nil
 
     -- Main UI container
     local ui = Instance.new("ScreenGui")
@@ -319,6 +320,7 @@ function GojoUI:CreateWindow(title)
     contentContainer.Size = UDim2.new(1, -20, 1, -120)
     contentContainer.Position = UDim2.new(0, 10, 0, 120)
     contentContainer.BackgroundTransparency = 1
+    contentContainer.ClipsDescendants = true
     contentContainer.Parent = mainFrame
 
     -- Drag functionality
@@ -343,14 +345,14 @@ function GojoUI:CreateWindow(title)
                     isDragging = false
                 end
             end)
-        end)
-    end
+        end
+    end)
 
     titleBar.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
-    end
+    end)
 
     table.insert(connections, UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and isDragging then
@@ -483,6 +485,7 @@ function GojoUI:CreateWindow(title)
         tabContent.ScrollBarImageColor3 = config.accentColor
         tabContent.Visible = false
         tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+        tabContent.Position = UDim2.new(0, 0, 0, 0)
         tabContent.Parent = contentContainer
 
         local contentLayout = Instance.new("UIListLayout")
@@ -493,13 +496,21 @@ function GojoUI:CreateWindow(title)
             tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 20)
         end)
 
+        -- Tab switching with animation
         tabButton.MouseButton1Click:Connect(function()
-            for _, child in ipairs(contentContainer:GetChildren()) do
-                if child:IsA("ScrollingFrame") then
-                    child.Visible = false
-                end
+            if currentTab == tabContent then return end
+
+            -- Fade out current tab
+            if currentTab then
+                TweenService:Create(currentTab, TweenInfo.new(config.animationSpeed), {Position = UDim2.new(-1, 0, 0, 0)}):Play()
+                currentTab.Visible = false
             end
+
+            -- Fade in new tab
+            tabContent.Position = UDim2.new(1, 0, 0, 0)
             tabContent.Visible = true
+            TweenService:Create(tabContent, TweenInfo.new(config.animationSpeed), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+            currentTab = tabContent
 
             for _, btn in ipairs(tabButtons:GetChildren()) do
                 if btn:IsA("TextButton") then
@@ -514,6 +525,7 @@ function GojoUI:CreateWindow(title)
             tabButton.BackgroundTransparency = 0
             tabButton.TextColor3 = config.accentColor
             tabContent.Visible = true
+            currentTab = tabContent
         end
 
         -- Section methods
@@ -551,13 +563,13 @@ function GojoUI:CreateWindow(title)
             end)
 
             -- Button element
-            function section:NewButton(name, description, callback)
+            function section:NewButton(name, description, callback, icon)
                 local button = Instance.new("TextButton")
                 button.Name = name
                 button.Size = UDim2.new(1, -20, 0, 45)
                 button.Position = UDim2.new(0, 10, 0, 40)
                 button.BackgroundColor3 = config.darkColor
-                button.Text = name
+                button.Text = icon and "" or name
                 button.TextColor3 = config.textColor
                 button.Font = config.font
                 button.TextSize = 15
@@ -566,6 +578,27 @@ function GojoUI:CreateWindow(title)
                 local corner = Instance.new("UICorner")
                 corner.CornerRadius = config.cornerRadius
                 corner.Parent = button
+
+                if icon then
+                    local buttonIcon = Instance.new("ImageLabel")
+                    buttonIcon.Size = UDim2.new(0, 24, 0, 24)
+                    buttonIcon.Position = UDim2.new(0, 10, 0.5, -12)
+                    buttonIcon.BackgroundTransparency = 1
+                    buttonIcon.Image = icon
+                    buttonIcon.ImageColor3 = config.textColor
+                    buttonIcon.Parent = button
+
+                    local buttonText = Instance.new("TextLabel")
+                    buttonText.Size = UDim2.new(1, -50, 1, 0)
+                    buttonText.Position = UDim2.new(0, 40, 0, 0)
+                    buttonText.BackgroundTransparency = 1
+                    buttonText.Text = name
+                    buttonText.TextColor3 = config.textColor
+                    buttonText.Font = config.font
+                    buttonText.TextSize = 15
+                    buttonText.TextXAlignment = Enum.TextXAlignment.Left
+                    buttonText.Parent = button
+                end
 
                 local tooltip = Instance.new("TextLabel")
                 tooltip.Name = "Tooltip"
@@ -607,7 +640,7 @@ function GojoUI:CreateWindow(title)
                 return button
             end
 
-            -- Toggle element (Fixed)
+            -- Toggle element
             function section:NewToggle(name, description, callback)
                 local toggle = {}
                 local value = false
@@ -736,7 +769,7 @@ function GojoUI:CreateWindow(title)
                 valueLabel.Position = UDim2.new(1, -60, 0, 0)
                 valueLabel.BackgroundTransparency = 1
                 valueLabel.Text = tostring(value)
-                valueLabel.Text EvangelismColor3 = config.accentColor
+                valueLabel.TextColor3 = config.accentColor
                 valueLabel.TextXAlignment = Enum.TextXAlignment.Right
                 valueLabel.Font = config.font
                 valueLabel.TextSize = 15
@@ -819,11 +852,12 @@ function GojoUI:CreateWindow(title)
                 return slider
             end
 
-            -- ColorPicker element
+            -- Full ColorPicker element (with HSV)
             function section:NewColorPicker(name, defaultColor, callback)
                 local colorPicker = {}
                 local value = defaultColor or Color3.fromRGB(255, 255, 255)
                 local isOpen = false
+                local h, s, v = value:ToHSV()
 
                 local pickerButton = Instance.new("TextButton")
                 pickerButton.Name = name
@@ -872,10 +906,55 @@ function GojoUI:CreateWindow(title)
                 pickerCorner.CornerRadius = config.cornerRadius
                 pickerCorner.Parent = pickerPanel
 
+                -- Saturation and Value (SV) picker
+                local svPicker = Instance.new("Frame")
+                svPicker.Name = "SVPicker"
+                svPicker.Size = UDim2.new(0, 200, 0, 150)
+                svPicker.Position = UDim2.new(0, 10, 0, 10)
+                svPicker.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                svPicker.Parent = pickerPanel
+
+                local svCorner = Instance.new("UICorner")
+                svCorner.CornerRadius = UDim.new(0, 4)
+                svCorner.Parent = svPicker
+
+                local satGradient = Instance.new("UIGradient")
+                satGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1))
+                })
+                satGradient.Rotation = 0
+                satGradient.Parent = svPicker
+
+                local valGradient = Instance.new("UIGradient")
+                valGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+                })
+                valGradient.Transparency = NumberSequence.new({
+                    NumberSequenceKeypoint.new(0, 0),
+                    NumberSequenceKeypoint.new(1, 1)
+                })
+                valGradient.Rotation = 90
+                valGradient.Parent = svPicker
+
+                local svHandle = Instance.new("Frame")
+                svHandle.Size = UDim2.new(0, 8, 0, 8)
+                svHandle.Position = UDim2.new(s, -4, 1 - v, -4)
+                svHandle.BackgroundColor3 = config.textColor
+                svHandle.BorderSizePixel = 2
+                svHandle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+                svHandle.Parent = svPicker
+
+                local svHandleCorner = Instance.new("UICorner")
+                svHandleCorner.CornerRadius = UDim.new(1, 0)
+                svHandleCorner.Parent = svHandle
+
+                -- Hue picker
                 local hueBar = Instance.new("Frame")
                 hueBar.Name = "HueBar"
-                hueBar.Size = UDim2.new(1, -20, 0, 20)
-                hueBar.Position = UDim2.new(0, 10, 0, 10)
+                hueBar.Size = UDim2.new(1, -230, 0, 20)
+                hueBar.Position = UDim2.new(0, 220, 0, 10)
                 hueBar.Parent = pickerPanel
 
                 local hueGradient = Instance.new("UIGradient")
@@ -896,7 +975,7 @@ function GojoUI:CreateWindow(title)
 
                 local hueHandle = Instance.new("Frame")
                 hueHandle.Size = UDim2.new(0, 4, 1, 4)
-                hueHandle.Position = UDim2.new(0, -2, 0, -2)
+                hueHandle.Position = UDim2.new(h, -2, 0, -2)
                 hueHandle.BackgroundColor3 = config.textColor
                 hueHandle.Parent = hueBar
 
@@ -904,53 +983,275 @@ function GojoUI:CreateWindow(title)
                 hueHandleCorner.CornerRadius = UDim.new(1, 0)
                 hueHandleCorner.Parent = hueHandle
 
-                local dragging = false
+                local draggingHue = false
+                local draggingSV = false
 
                 local function updateHue(input)
                     local relativeX = (input.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X
                     relativeX = math.clamp(relativeX, 0, 1)
-                    local hue = relativeX
-                    local h, s, v = value:ToHSV()
-                    value = Color3.fromHSV(hue, s, v)
+                    h = relativeX
+                    value = Color3.fromHSV(h, s, v)
+                    svPicker.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                    satGradient.Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1))
+                    })
                     colorIndicator.BackgroundColor3 = value
-                    hueHandle.Position = UDim2.new(relativeX, -2, 0, -2)
+                    hueHandle.Position = UDim2.new(h, -2, 0, -2)
                     pcall(callback, value)
                 end
 
-                hueBar.MouseButton1Down:Connect(function(input)
-                    dragging = true
-                    updateHue(input)
+                local function updateSV(input)
+                    local relativeX = (input.Position.X - svPicker.AbsolutePosition.X) / svPicker.AbsoluteSize.X
+                    local relativeY = (input.Position.Y - svPicker.AbsolutePosition.Y) / svPicker.AbsoluteSize.Y
+                    s = math.clamp(relativeX, 0, 1)
+                    v = 1 - math.clamp(relativeY, 0, 1)
+                    value = Color3.fromHSV(h, s, v)
+                    colorIndicator.BackgroundColor3 = value
+                    svHandle.Position = UDim2.new(s, -4, 1 - v, -4)
+                    pcall(callback, value)
+                end
+
+                hueBar.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        draggingHue = true
+                        updateHue(input)
+                    end
+                end)
+
+                svPicker.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        draggingSV = true
+                        updateSV(input)
+                    end
                 end)
 
                 table.insert(connections, UserInputService.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        dragging = false
+                        draggingHue = false
+                        draggingSV = false
                     end
                 end))
 
                 table.insert(connections, UserInputService.InputChanged:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                        updateHue(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement then
+                        if draggingHue then
+                            updateHue(input)
+                        elseif draggingSV then
+                            updateSV(input)
+                        end
                     end
                 end))
 
                 pickerButton.MouseButton1Click:Connect(function()
                     isOpen = not isOpen
                     pickerPanel.Visible = isOpen
-                    TweenService:Create(pickerPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, isOpen and 120 or 0)}):Play()
+                    TweenService:Create(pickerPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, isOpen and 170 or 0)}):Play()
                 end)
 
                 function colorPicker:SetValue(newColor)
                     value = newColor
+                    h, s, v = value:ToHSV()
                     colorIndicator.BackgroundColor3 = value
-                    local h, _, _ = value:ToHSV()
                     hueHandle.Position = UDim2.new(h, -2, 0, -2)
+                    svHandle.Position = UDim2.new(s, -4, 1 - v, -4)
+                    svPicker.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                    satGradient.Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(1, Color3.fromHSV(h, 1, 1))
+                    })
                     pcall(callback, value)
                 end
 
                 applyButtonEffects(pickerButton, config.accentColor)
 
                 return colorPicker
+            end
+
+            -- TextBox element
+            function section:NewTextBox(name, placeholder, callback)
+                local textBox = {}
+                local value = ""
+
+                local textBoxFrame = Instance.new("Frame")
+                textBoxFrame.Name = name
+                textBoxFrame.Size = UDim2.new(1, -20, 0, 45)
+                textBoxFrame.Position = UDim2.new(0, 10, 0, 40)
+                textBoxFrame.BackgroundColor3 = config.darkColor
+                textBoxFrame.Parent = sectionFrame
+
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = config.cornerRadius
+                corner.Parent = textBoxFrame
+
+                local title = Instance.new("TextLabel")
+                title.Name = "Title"
+                title.Size = UDim2.new(0.7, 0, 1, 0)
+                title.Position = UDim2.new(0, 15, 0, 0)
+                title.BackgroundTransparency = 1
+                title.Text = name
+                title.TextColor3 = config.textColor
+                title.TextXAlignment = Enum.TextXAlignment.Left
+                title.Font = config.font
+                title.TextSize = 15
+                title.Parent = textBoxFrame
+
+                local inputBox = Instance.new("TextBox")
+                inputBox.Size = UDim2.new(0, 100, 0, 24)
+                inputBox.Position = UDim2.new(1, -110, 0.5, -12)
+                inputBox.BackgroundColor3 = config.lightColor
+                inputBox.Text = placeholder or ""
+                inputBox.TextColor3 = config.textColor
+                inputBox.Font = config.font
+                inputBox.TextSize = 14
+                inputBox.ClearTextOnFocus = false
+                inputBox.Parent = textBoxFrame
+
+                local inputCorner = Instance.new("UICorner")
+                inputCorner.CornerRadius = UDim.new(0, 4)
+                inputCorner.Parent = inputBox
+
+                inputBox.FocusLost:Connect(function(enterPressed)
+                    if enterPressed then
+                        value = inputBox.Text
+                        pcall(callback, value)
+                    end
+                end)
+
+                function textBox:SetValue(newValue)
+                    value = newValue
+                    inputBox.Text = value
+                    pcall(callback, value)
+                end
+
+                return textBox
+            end
+
+            -- Dropdown element
+            function section:NewDropdown(name, options, defaultOption, callback)
+                local dropdown = {}
+                local value = defaultOption or options[1]
+                local isOpen = false
+
+                local dropdownButton = Instance.new("TextButton")
+                dropdownButton.Name = name
+                dropdownButton.Size = UDim2.new(1, -20, 0, 45)
+                dropdownButton.Position = UDim2.new(0, 10, 0, 40)
+                dropdownButton.BackgroundColor3 = config.darkColor
+                dropdownButton.Text = ""
+                dropdownButton.Parent = sectionFrame
+
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = config.cornerRadius
+                corner.Parent = dropdownButton
+
+                local title = Instance.new("TextLabel")
+                title.Name = "Title"
+                title.Size = UDim2.new(0.7, 0, 1, 0)
+                title.Position = UDim2.new(0, 15, 0, 0)
+                title.BackgroundTransparency = 1
+                title.Text = name
+                title.TextColor3 = config.textColor
+                title.TextXAlignment = Enum.TextXAlignment.Left
+                title.Font = config.font
+                title.TextSize = 15
+                title.Parent = dropdownButton
+
+                local selectedLabel = Instance.new("TextLabel")
+                selectedLabel.Name = "Selected"
+                selectedLabel.Size = UDim2.new(0, 100, 0, 24)
+                selectedLabel.Position = UDim2.new(1, -110, 0.5, -12)
+                selectedLabel.BackgroundColor3 = config.lightColor
+                selectedLabel.Text = value
+                selectedLabel.TextColor3 = config.textColor
+                selectedLabel.Font = config.font
+                selectedLabel.TextSize = 14
+                selectedLabel.TextXAlignment = Enum.TextXAlignment.Center
+                selectedLabel.Parent = dropdownButton
+
+                local selectedCorner = Instance.new("UICorner")
+                selectedCorner.CornerRadius = UDim.new(0, 4)
+                selectedCorner.Parent = selectedLabel
+
+                local dropdownPanel = Instance.new("Frame")
+                dropdownPanel.Name = "DropdownPanel"
+                dropdownPanel.Size = UDim2.new(1, -20, 0, 0)
+                dropdownPanel.Position = UDim2.new(0, 10, 0, 45)
+                dropdownPanel.BackgroundColor3 = config.lightColor
+                dropdownPanel.Visible = false
+                dropdownPanel.Parent = sectionFrame
+
+                local dropdownCorner = Instance.new("UICorner")
+                dropdownCorner.CornerRadius = config.cornerRadius
+                dropdownCorner.Parent = dropdownPanel
+
+                local dropdownList = Instance.new("ScrollingFrame")
+                dropdownList.Size = UDim2.new(1, 0, 1, 0)
+                dropdownList.BackgroundTransparency = 1
+                dropdownList.ScrollBarThickness = 4
+                dropdownList.ScrollBarImageColor3 = config.accentColor
+                dropdownList.CanvasSize = UDim2.new(0, 0, 0, 0)
+                dropdownList.Parent = dropdownPanel
+
+                local listLayout = Instance.new("UIListLayout")
+                listLayout.Parent = dropdownList
+                listLayout.Padding = UDim.new(0, 5)
+
+                listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    dropdownList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+                end)
+
+                -- Populate dropdown options
+                for _, option in ipairs(options) do
+                    local optionButton = Instance.new("TextButton")
+                    optionButton.Size = UDim2.new(1, -10, 0, 30)
+                    optionButton.BackgroundColor3 = config.darkColor
+                    optionButton.Text = tostring(option)
+                    optionButton.TextColor3 = config.textColor
+                    optionButton.Font = config.font
+                    optionButton.TextSize = 14
+                    optionButton.Parent = dropdownList
+
+                    local optionCorner = Instance.new("UICorner")
+                    optionCorner.CornerRadius = UDim.new(0, 4)
+                    optionCorner.Parent = optionButton
+
+                    optionButton.MouseButton1Click:Connect(function()
+                        value = option
+                        selectedLabel.Text = tostring(value)
+                        isOpen = false
+                        dropdownPanel.Visible = false
+                        TweenService:Create(dropdownPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, 0)}):Play()
+                        pcall(callback, value)
+                    end)
+
+                    optionButton.MouseEnter:Connect(function()
+                        TweenService:Create(optionButton, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor}):Play()
+                    end)
+
+                    optionButton.MouseLeave:Connect(function()
+                        TweenService:Create(optionButton, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor}):Play()
+                    end)
+                end
+
+                dropdownButton.MouseButton1Click:Connect(function()
+                    isOpen = not isOpen
+                    dropdownPanel.Visible = isOpen
+                    local targetHeight = isOpen and math.min(#options * 35, 140) or 0
+                    TweenService:Create(dropdownPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, targetHeight)}):Play()
+                end)
+
+                function dropdown:SetValue(newValue)
+                    if table.find(options, newValue) then
+                        value = newValue
+                        selectedLabel.Text = tostring(value)
+                        pcall(callback, value)
+                    end
+                end
+
+                applyButtonEffects(dropdownButton, config.accentColor)
+
+                return dropdown
             end
 
             return section
