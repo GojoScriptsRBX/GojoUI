@@ -1,77 +1,101 @@
 -- GojoUI Library by DevEx | Ultra Modern UI Solution
 local GojoUI = {}
 
--- Configuration
-local config = {
-    accentColor = Color3.fromRGB(100, 200, 255),
-    darkColor = Color3.fromRGB(25, 25, 35),
-    lightColor = Color3.fromRGB(40, 40, 50),
-    textColor = Color3.fromRGB(240, 240, 240),
-    errorColor = Color3.fromRGB(255, 80, 80),
-    successColor = Color3.fromRGB(80, 255, 140),
-    font = Enum.Font.Gotham,
-    titleFont = Enum.Font.GothamBold,
-    cornerRadius = UDim.new(0, 8),
-    animationSpeed = 0.15,
-    loadingDuration = 1.5,
-    theme = "Dark", -- Добавлена поддержка тем (Dark/Light)
-    toggleKey = Enum.KeyCode.F9 -- Горячая клавиша для открытия/закрытия
-}
-
 -- Services
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
--- Create loading screen
+-- Configuration
+local config = {
+    accentColor = Color3.fromRGB(100, 200, 255),
+    darkColor = Color3.fromRGB(30, 30, 40),
+    lightColor = Color3.fromRGB(50, 50, 60),
+    textColor = Color3.fromRGB(230, 230, 230),
+    errorColor = Color3.fromRGB(255, 100, 100),
+    successColor = Color3.fromRGB(100, 255, 150),
+    font = Enum.Font.Gotham,
+    titleFont = Enum.Font.GothamBold,
+    cornerRadius = UDim.new(0, 10),
+    animationSpeed = 0.2,
+    loadingDuration = 1,
+    theme = "Dark", -- Поддержка тем (Dark/Light)
+    toggleKey = Enum.KeyCode.F9,
+    shadowTransparency = 0.6
+}
+
+-- Light theme colors (optional)
+if config.theme == "Light" then
+    config.darkColor = Color3.fromRGB(220, 220, 220)
+    config.lightColor = Color3.fromRGB(240, 240, 240)
+    config.textColor = Color3.fromRGB(30, 30, 30)
+end
+
+-- Utility function to create shadows
+local function CreateShadow(parent)
+    local shadow = Instance.new("Frame")
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0, -10, 0, -10)
+    shadow.BackgroundTransparency = 1
+    shadow.ZIndex = -1
+    shadow.Parent = parent
+
+    local shadowGradient = Instance.new("UIGradient")
+    shadowGradient.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
+    shadowGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, config.shadowTransparency),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    shadowGradient.Parent = shadow
+end
+
+-- Create compact loading screen
 local function CreateLoader()
     local loaderUI = Instance.new("ScreenGui")
     loaderUI.Name = "GojoUILoader"
-    loaderUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    loaderUI.ZIndexBehavior = Enum.ZIndexBehavior Sibling
     loaderUI.ResetOnSpawn = false
     loaderUI.Parent = CoreGui
 
     -- Background
     local background = Instance.new("Frame")
     background.Name = "Background"
-    background.Size = UDim2.new(1, 0, 1, 0)
+    background.Size = UDim2.new(0, 300, 0, 150)
+    background.Position = UDim2.new(0.5, -150, 0.5, -75)
     background.BackgroundColor3 = config.darkColor
     background.BorderSizePixel = 0
     background.ZIndex = 999
     background.Parent = loaderUI
 
-    -- Container
-    local container = Instance.new("Frame")
-    container.Name = "Container"
-    container.Size = UDim2.new(0, 400, 0, 200)
-    container.Position = UDim2.new(0.5, -200, 0.5, -100)
-    container.BackgroundTransparency = 1
-    container.ZIndex = 1000
-    container.Parent = background
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = config.cornerRadius
+    corner.Parent = background
+
+    CreateShadow(background)
 
     -- Logo
     local logo = Instance.new("TextLabel")
     logo.Name = "Logo"
-    logo.Size = UDim2.new(1, 0, 0, 80)
+    logo.Size = UDim2.new(1, 0, 0, 50)
     logo.Text = "GojoUI"
     logo.TextColor3 = config.accentColor
-    logo.TextSize = 48
+    logo.TextSize = 32
     logo.Font = config.titleFont
     logo.BackgroundTransparency = 1
-    logo.ZIndex = 1001
-    logo.Parent = container
+    logo.ZIndex = 1000
+    logo.Parent = background
 
     -- Progress bar background
     local progressBg = Instance.new("Frame")
     progressBg.Name = "ProgressBackground"
-    progressBg.Size = UDim2.new(1, -40, 0, 8)
-    progressBg.Position = UDim2.new(0, 20, 1, -40)
+    progressBg.Size = UDim2.new(1, -40, 0, 6)
+    progressBg.Position = UDim2.new(0, 20, 0, 80)
     progressBg.BackgroundColor3 = config.lightColor
-    progressBg.ZIndex = 1001
-    progressBg.Parent = container
+    progressBg.ZIndex = 1000
+    progressBg.Parent = background
 
     local bgCorner = Instance.new("UICorner")
-    bgCorner.CornerRadius = config.cornerRadius
+    bgCorner.CornerRadius = UDim.new(0, 3)
     bgCorner.Parent = progressBg
 
     -- Progress bar fill
@@ -79,36 +103,36 @@ local function CreateLoader()
     progressFill.Name = "ProgressFill"
     progressFill.Size = UDim2.new(0, 0, 1, 0)
     progressFill.BackgroundColor3 = config.accentColor
-    progressFill.ZIndex = 1002
+    progressFill.ZIndex = 1001
     progressFill.Parent = progressBg
 
     local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = config.cornerRadius
+    fillCorner.CornerRadius = UDim.new(0, 3)
     fillCorner.Parent = progressFill
 
     -- Status text
     local status = Instance.new("TextLabel")
     status.Name = "Status"
     status.Size = UDim2.new(1, 0, 0, 20)
-    status.Position = UDim2.new(0, 0, 1, -20)
+    status.Position = UDim2.new(0, 0, 0, 110)
     status.Text = "Initializing..."
     status.TextColor3 = config.textColor
-    status.TextSize = 14
+    status.TextSize = 12
     status.Font = config.font
     status.BackgroundTransparency = 1
-    status.ZIndex = 1001
-    status.Parent = container
+    status.ZIndex = 100 geospatial
+    status.Parent = background
 
     -- Animation
     local tweenInfo = TweenInfo.new(config.loadingDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+    background.BackgroundTransparency = 1
+    TweenService:Create(background, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
     TweenService:Create(progressFill, tweenInfo, {Size = UDim2.new(1, 0, 1, 0)}):Play()
 
     -- Simulate loading steps
     local steps = {
         "Loading assets...",
-        "Initializing components...",
         "Building interface...",
-        "Almost done...",
         "Ready!"
     }
 
@@ -124,8 +148,7 @@ local function CreateLoader()
     -- Cleanup
     task.delay(config.loadingDuration, function()
         if loaderUI and loaderUI.Parent then
-            local fadeOut = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            TweenService:Create(background, fadeOut, {BackgroundTransparency = 1}):Play()
+            TweenService:Create(background, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
             task.wait(0.3)
             loaderUI:Destroy()
         end
@@ -156,67 +179,59 @@ function GojoUI:CreateWindow(title)
     -- Main frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 500, 0, 600)
-    mainFrame.Position = UDim2.new(0.5, -250, 0.5, -300)
+    mainFrame.Size = UDim2.new(0, 550, 0, 650)
+    mainFrame.Position = UDim2.new(0.5, -275, 0.5, -325)
     mainFrame.BackgroundColor3 = config.darkColor
     mainFrame.BorderSizePixel = 0
     mainFrame.ClipsDescendants = true
+    mainFrame.BackgroundTransparency = 1
     mainFrame.Parent = ui
+
+    TweenService:Create(mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
 
     local corner = Instance.new("UICorner")
     corner.CornerRadius = config.cornerRadius
     corner.Parent = mainFrame
 
-    -- Enhanced drop shadow
-    local shadow = Instance.new("Frame")
-    shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 20, 1, 20)
-    shadow.Position = UDim2.new(0, -10, 0, -10)
-    shadow.BackgroundTransparency = 1
-    shadow.ZIndex = -1
-    shadow.Parent = mainFrame
-
-    local shadowGradient = Instance.new("UIGradient")
-    shadowGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-    })
-    shadowGradient.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.7),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    shadowGradient.Parent = shadow
+    CreateShadow(mainFrame)
 
     -- Title bar
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 42)
+    titleBar.Size = UDim2.new(1, 0, 0, 50)
     titleBar.BackgroundColor3 = config.accentColor
     titleBar.BorderSizePixel = 0
     titleBar.Parent = mainFrame
 
+    local titleGradient = Instance.new("UIGradient")
+    titleGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, config.accentColor),
+        ColorSequenceKeypoint.new(1, config.accentColor:Lerp(Color3.fromRGB(255, 255, 255), 0.2))
+    })
+    titleGradient.Parent = titleBar
+
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.CornerRadius = UDim.new(0, 10)
     titleCorner.Parent = titleBar
 
     -- Title text
     local titleText = Instance.new("TextLabel")
     titleText.Name = "Title"
     titleText.Size = UDim2.new(1, -80, 1, 0)
-    titleText.Position = UDim2.new(0, 15, 0, 0)
+    titleText.Position = UDim2.new(0, 20, 0, 0)
     titleText.BackgroundTransparency = 1
     titleText.Text = title
     titleText.TextColor3 = config.textColor
     titleText.TextXAlignment = Enum.TextXAlignment.Left
     titleText.Font = config.titleFont
-    titleText.TextSize = 18
+    titleText.TextSize = 20
     titleText.Parent = titleBar
 
     -- Minimize button
     local minimizeButton = Instance.new("TextButton")
     minimizeButton.Name = "MinimizeButton"
-    minimizeButton.Size = UDim2.new(0, 32, 0, 32)
-    minimizeButton.Position = UDim2.new(1, -74, 0.5, -16)
+    minimizeButton.Size = UDim2.new(0, 36, 0, 36)
+    minimizeButton.Position = UDim2.new(1, -82, 0.5, -18)
     minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 180, 80)
     minimizeButton.Text = "−"
     minimizeButton.TextColor3 = config.textColor
@@ -231,8 +246,8 @@ function GojoUI:CreateWindow(title)
     -- Close button
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 32, 0, 32)
-    closeButton.Position = UDim2.new(1, -37, 0.5, -16)
+    closeButton.Size = UDim2.new(0, 36, 0, 36)
+    closeButton.Position = UDim2.new(1, -42, 0.5, -18)
     closeButton.BackgroundColor3 = config.errorColor
     closeButton.Text = "×"
     closeButton.TextColor3 = config.textColor
@@ -244,23 +259,40 @@ function GojoUI:CreateWindow(title)
     closeCorner.CornerRadius = UDim.new(1, 0)
     closeCorner.Parent = closeButton
 
-    -- Button effects
+    -- Button effects with ripple
     local function applyButtonEffects(button, hoverColor)
         button.MouseEnter:Connect(function()
-            TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = hoverColor, Size = UDim2.new(0, 34, 0, 34)}):Play()
+            TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = hoverColor, Size = UDim2.new(0, 38, 0, 38)}):Play()
         end)
         button.MouseLeave:Connect(function()
-            TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = button.BackgroundColor3, Size = UDim2.new(0, 32, 0, 32)}):Play()
+            TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = button.BackgroundColor3, Size = UDim2.new(0, 36, 0, 36)}):Play()
+        end)
+
+        button.MouseButton1Down:Connect(function()
+            local ripple = Instance.new("Frame")
+            ripple.Size = UDim2.new(0, 0, 0, 0)
+            ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+            ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ripple.BackgroundTransparency = 0.5
+            ripple.ZIndex = 10
+            ripple.Parent = button
+
+            local rippleCorner = Instance.new("UICorner")
+            rippleCorner.CornerRadius = UDim.new(1, 0)
+            rippleCorner.Parent = ripple
+
+            TweenService:Create(ripple, TweenInfo.new(0.3), {Size = UDim2.new(2, 0, 2, 0), BackgroundTransparency = 1}):Play()
+            task.wait(0.3)
+            ripple:Destroy()
         end)
     end
 
     applyButtonEffects(closeButton, Color3.fromRGB(255, 120, 120))
     applyButtonEffects(minimizeButton, Color3.fromRGB(255, 200, 120))
 
-    -- Minimize functionality
     minimizeButton.MouseButton1Click:Connect(function()
         isMinimized = not isMinimized
-        local targetSize = isMinimized and UDim2.new(0, 500, 0, 42) or UDim2.new(0, 500, 0, 600)
+        local targetSize = isMinimized and UDim2.new(0, 550, 0, 50) or UDim2.new(0, 550, 0, 650)
         TweenService:Create(mainFrame, TweenInfo.new(config.animationSpeed), {Size = targetSize}):Play()
     end)
 
@@ -271,21 +303,21 @@ function GojoUI:CreateWindow(title)
     -- Tab buttons container
     local tabButtons = Instance.new("Frame")
     tabButtons.Name = "TabButtons"
-    tabButtons.Size = UDim2.new(1, -20, 0, 40)
-    tabButtons.Position = UDim2.new(0, 10, 0, 47)
+    tabButtons.Size = UDim2.new(1, -20, 0, 50)
+    tabButtons.Position = UDim2.new(0, 10, 0, 60)
     tabButtons.BackgroundTransparency = 1
     tabButtons.Parent = mainFrame
 
     local tabListLayout = Instance.new("UIListLayout")
     tabListLayout.FillDirection = Enum.FillDirection.Horizontal
-    tabListLayout.Padding = UDim.new(0, 5)
+    tabListLayout.Padding = UDim.new(0, 8)
     tabListLayout.Parent = tabButtons
 
     -- Content container
     local contentContainer = Instance.new("Frame")
     contentContainer.Name = "ContentContainer"
-    contentContainer.Size = UDim2.new(1, -20, 1, -100)
-    contentContainer.Position = UDim2.new(0, 10, 0, 92)
+    contentContainer.Size = UDim2.new(1, -20, 1, -120)
+    contentContainer.Position = UDim2.new(0, 10, 0, 120)
     contentContainer.BackgroundTransparency = 1
     contentContainer.Parent = mainFrame
 
@@ -311,14 +343,14 @@ function GojoUI:CreateWindow(title)
                     isDragging = false
                 end
             end)
-        end
-    end)
+        end)
+    end
 
     titleBar.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
-    end)
+    end
 
     table.insert(connections, UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and isDragging then
@@ -339,8 +371,8 @@ function GojoUI:CreateWindow(title)
 
         local notification = Instance.new("Frame")
         notification.Name = "Notification_" .. tostring(#notifications + 1)
-        notification.Size = UDim2.new(0, 300, 0, 100)
-        notification.Position = UDim2.new(1, -320, 1, -120 - (#notifications * 110))
+        notification.Size = UDim2.new(0, 320, 0, 110)
+        notification.Position = UDim2.new(1, -340, 1, -130 - (#notifications * 120))
         notification.BackgroundColor3 = config.darkColor
         notification.Parent = ui
 
@@ -348,18 +380,7 @@ function GojoUI:CreateWindow(title)
         corner.CornerRadius = config.cornerRadius
         corner.Parent = notification
 
-        local shadow = Instance.new("Frame")
-        shadow.Name = "Shadow"
-        shadow.Size = UDim2.new(1, 12, 1, 12)
-        shadow.Position = UDim2.new(0, -6, 0, -6)
-        shadow.BackgroundTransparency = 1
-        shadow.ZIndex = -1
-        shadow.Parent = notification
-
-        local shadowGradient = Instance.new("UIGradient")
-        shadowGradient.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
-        shadowGradient.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(1, 1)})
-        shadowGradient.Parent = shadow
+        CreateShadow(notification)
 
         local titleLabel = Instance.new("TextLabel")
         titleLabel.Name = "Title"
@@ -375,7 +396,7 @@ function GojoUI:CreateWindow(title)
 
         local messageLabel = Instance.new("TextLabel")
         messageLabel.Name = "Message"
-        messageLabel.Size = UDim2.new(1, -20, 0, 50)
+        messageLabel.Size = UDim2.new(1, -20, 0, 60)
         messageLabel.Position = UDim2.new(0, 15, 0, 40)
         messageLabel.BackgroundTransparency = 1
         messageLabel.Text = message
@@ -389,11 +410,9 @@ function GojoUI:CreateWindow(title)
 
         table.insert(notifications, notification)
 
-        -- Animate in
-        notification.Position = UDim2.new(1, 20, 1, -120 - (#notifications * 110))
-        TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(1, -320, 1, -120 - (#notifications * 110))}):Play()
+        notification.Position = UDim2.new(1, 20, 1, -130 - (#notifications * 120))
+        TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(1, -340, 1, -130 - (#notifications * 120))}):Play()
 
-        -- Auto remove after duration
         task.delay(duration, function()
             if notification and notification.Parent then
                 TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(1, 20, notification.Position.Y.Scale, notification.Position.Y.Offset)}):Play()
@@ -401,9 +420,8 @@ function GojoUI:CreateWindow(title)
                 notification:Destroy()
                 table.remove(notifications, table.find(notifications, notification))
 
-                -- Update positions of remaining notifications
                 for i, notif in ipairs(notifications) do
-                    TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(1, -320, 1, -120 - (i * 110))}):Play()
+                    TweenService:Create(notif, TweenInfo.new(0.3), {Position = UDim2.new(1, -340, 1, -130 - (i * 120))}):Play()
                 end
             end
         end)
@@ -413,18 +431,20 @@ function GojoUI:CreateWindow(title)
         for _, connection in ipairs(connections) do
             connection:Disconnect()
         end
+        TweenService:Create(mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        task.wait(0.3)
         ui:Destroy()
     end
 
     -- Tab methods
-    function window:NewTab(name)
+    function window:NewTab(name, icon)
         local tab = {}
         local tabButton = Instance.new("TextButton")
         tabButton.Name = name
-        tabButton.Size = UDim2.new(0, 100, 1, 0)
-        tabButton.BackgroundColor3 = config.darkColor
+        tabButton.Size = UDim2.new(0, 120, 1, 0)
+        tabButton.BackgroundColor3 = config.lightColor
         tabButton.BackgroundTransparency = 0.5
-        tabButton.Text = name
+        tabButton.Text = icon and "" or name
         tabButton.TextColor3 = config.textColor
         tabButton.Font = config.font
         tabButton.TextSize = 14
@@ -434,11 +454,32 @@ function GojoUI:CreateWindow(title)
         tabCorner.CornerRadius = config.cornerRadius
         tabCorner.Parent = tabButton
 
+        if icon then
+            local tabIcon = Instance.new("ImageLabel")
+            tabIcon.Size = UDim2.new(0, 24, 0, 24)
+            tabIcon.Position = UDim2.new(0, 10, 0.5, -12)
+            tabIcon.BackgroundTransparency = 1
+            tabIcon.Image = icon
+            tabIcon.ImageColor3 = config.textColor
+            tabIcon.Parent = tabButton
+
+            local tabText = Instance.new("TextLabel")
+            tabText.Size = UDim2.new(1, -50, 1, 0)
+            tabText.Position = UDim2.new(0, 40, 0, 0)
+            tabText.BackgroundTransparency = 1
+            tabText.Text = name
+            tabText.TextColor3 = config.textColor
+            tabText.Font = config.font
+            tabText.TextSize = 14
+            tabText.TextXAlignment = Enum.TextXAlignment.Left
+            tabText.Parent = tabButton
+        end
+
         local tabContent = Instance.new("ScrollingFrame")
         tabContent.Name = name
         tabContent.Size = UDim2.new(1, 0, 1, 0)
         tabContent.BackgroundTransparency = 1
-        tabContent.ScrollBarThickness = 3
+        tabContent.ScrollBarThickness = 4
         tabContent.ScrollBarImageColor3 = config.accentColor
         tabContent.Visible = false
         tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -446,13 +487,12 @@ function GojoUI:CreateWindow(title)
 
         local contentLayout = Instance.new("UIListLayout")
         contentLayout.Parent = tabContent
-        contentLayout.Padding = UDim.new(0, 10)
+        contentLayout.Padding = UDim.new(0, 12)
 
         contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 20)
         end)
 
-        -- Tab switching
         tabButton.MouseButton1Click:Connect(function()
             for _, child in ipairs(contentContainer:GetChildren()) do
                 if child:IsA("ScrollingFrame") then
@@ -463,17 +503,16 @@ function GojoUI:CreateWindow(title)
 
             for _, btn in ipairs(tabButtons:GetChildren()) do
                 if btn:IsA("TextButton") then
-                    TweenService:Create(btn, TweenInfo.new(config.animationSpeed), {TextColor3 = config.textColor, BackgroundTransparency = 0.5}):Play()
+                    TweenService:Create(btn, TweenInfo.new(config.animationSpeed), {BackgroundTransparency = 0.5, TextColor3 = config.textColor}):Play()
                 end
             end
 
-            TweenService:Create(tabButton, TweenInfo.new(config.animationSpeed), {TextColor3 = config.accentColor, BackgroundTransparency = 0}):Play()
+            TweenService:Create(tabButton, TweenInfo.new(config.animationSpeed), {BackgroundTransparency = 0, TextColor3 = config.accentColor}):Play()
         end)
 
-        -- Activate first tab
         if #tabButtons:GetChildren() == 1 then
-            tabButton.TextColor3 = config.accentColor
             tabButton.BackgroundTransparency = 0
+            tabButton.TextColor3 = config.accentColor
             tabContent.Visible = true
         end
 
@@ -494,34 +533,34 @@ function GojoUI:CreateWindow(title)
             local sectionTitle = Instance.new("TextLabel")
             sectionTitle.Name = "Title"
             sectionTitle.Size = UDim2.new(1, -20, 0, 40)
-            sectionTitle.Position = UDim2.new(0, 15, 0, 0)
+            sectionTitle.Position = UDim2.new(0, 15, 0, 10)
             sectionTitle.BackgroundTransparency = 1
             sectionTitle.Text = name
             sectionTitle.TextColor3 = config.accentColor
             sectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             sectionTitle.Font = config.titleFont
-            sectionTitle.TextSize = 16
+            sectionTitle.TextSize = 18
             sectionTitle.Parent = sectionFrame
 
             local contentLayout = Instance.new("UIListLayout")
             contentLayout.Parent = sectionFrame
-            contentLayout.Padding = UDim.new(0, 10)
+            contentLayout.Padding = UDim.new(0, 12)
 
             contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                sectionFrame.Size = UDim2.new(1, 0, 0, contentLayout.AbsoluteContentSize.Y + 50)
+                sectionFrame.Size = UDim2.new(1, 0, 0, contentLayout.AbsoluteContentSize.Y + 60)
             end)
 
             -- Button element
             function section:NewButton(name, description, callback)
                 local button = Instance.new("TextButton")
                 button.Name = name
-                button.Size = UDim2.new(1, -20, 0, 40)
+                button.Size = UDim2.new(1, -20, 0, 45)
                 button.Position = UDim2.new(0, 10, 0, 40)
                 button.BackgroundColor3 = config.darkColor
                 button.Text = name
                 button.TextColor3 = config.textColor
                 button.Font = config.font
-                button.TextSize = 14
+                button.TextSize = 15
                 button.Parent = sectionFrame
 
                 local corner = Instance.new("UICorner")
@@ -531,7 +570,7 @@ function GojoUI:CreateWindow(title)
                 local tooltip = Instance.new("TextLabel")
                 tooltip.Name = "Tooltip"
                 tooltip.Size = UDim2.new(1, -20, 0, 0)
-                tooltip.Position = UDim2.new(0, 10, 0, 40)
+                tooltip.Position = UDim2.new(0, 10, 0, 45)
                 tooltip.BackgroundColor3 = config.darkColor
                 tooltip.Text = description
                 tooltip.TextColor3 = config.textColor
@@ -546,14 +585,14 @@ function GojoUI:CreateWindow(title)
                 tooltipCorner.Parent = tooltip
 
                 button.MouseEnter:Connect(function()
-                    TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor, Size = UDim2.new(1, -18, 0, 42)}):Play()
+                    TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor, Size = UDim2.new(1, -18, 0, 47)}):Play()
                     tooltip.Size = UDim2.new(1, -20, 0, 0)
                     tooltip.Visible = true
                     TweenService:Create(tooltip, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, 40)}):Play()
                 end)
 
                 button.MouseLeave:Connect(function()
-                    TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor, Size = UDim2.new(1, -20, 0, 40)}):Play()
+                    TweenService:Create(button, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor, Size = UDim2.new(1, -20, 0, 45)}):Play()
                     TweenService:Create(tooltip, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, 0)}):Play()
                     task.wait(config.animationSpeed)
                     tooltip.Visible = false
@@ -563,24 +602,27 @@ function GojoUI:CreateWindow(title)
                     pcall(callback)
                 end)
 
+                applyButtonEffects(button, config.accentColor)
+
                 return button
             end
 
-            -- Toggle element
+            -- Toggle element (Fixed)
             function section:NewToggle(name, description, callback)
                 local toggle = {}
                 local value = false
 
-                local toggleFrame = Instance.new("Frame")
-                toggleFrame.Name = name
-                toggleFrame.Size = UDim2.new(1, -20, 0, 40)
-                toggleFrame.Position = UDim2.new(0, 10, 0, 0)
-                toggleFrame.BackgroundColor3 = config.darkColor
-                toggleFrame.Parent = sectionFrame
+                local toggleButton = Instance.new("TextButton")
+                toggleButton.Name = name
+                toggleButton.Size = UDim2.new(1, -20, 0, 45)
+                toggleButton.Position = UDim2.new(0, 10, 0, 40)
+                toggleButton.BackgroundColor3 = config.darkColor
+                toggleButton.Text = ""
+                toggleButton.Parent = sectionFrame
 
                 local corner = Instance.new("UICorner")
                 corner.CornerRadius = config.cornerRadius
-                corner.Parent = toggleFrame
+                corner.Parent = toggleButton
 
                 local title = Instance.new("TextLabel")
                 title.Name = "Title"
@@ -591,45 +633,56 @@ function GojoUI:CreateWindow(title)
                 title.TextColor3 = config.textColor
                 title.TextXAlignment = Enum.TextXAlignment.Left
                 title.Font = config.font
-                title.TextSize = 14
-                title.Parent = toggleFrame
+                title.TextSize = 15
+                title.Parent = toggleButton
+
+                local toggleTrack = Instance.new("Frame")
+                toggleTrack.Name = "Track"
+                toggleTrack.Size = UDim2.new(0, 50, 0, 24)
+                toggleTrack.Position = UDim2.new(1, -60, 0.5, -12)
+                toggleTrack.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+                toggleTrack.Parent = toggleButton
+
+                local trackCorner = Instance.new("UICorner")
+                trackCorner.CornerRadius = UDim.new(1, 0)
+                trackCorner.Parent = toggleTrack
 
                 local toggleIndicator = Instance.new("Frame")
                 toggleIndicator.Name = "Indicator"
-                toggleIndicator.Size = UDim2.new(0, 24, 0, 24)
-                toggleIndicator.Position = UDim2.new(1, -30, 0.5, -12)
-                toggleIndicator.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-                toggleIndicator.Parent = toggleFrame
+                toggleIndicator.Size = UDim2.new(0, 20, 0, 20)
+                toggleIndicator.Position = UDim2.new(0, 4, 0.5, -10)
+                toggleIndicator.BackgroundColor3 = config.textColor
+                toggleIndicator.Parent = toggleTrack
 
                 local indicatorCorner = Instance.new("UICorner")
                 indicatorCorner.CornerRadius = UDim.new(1, 0)
                 indicatorCorner.Parent = toggleIndicator
 
-                toggleFrame.MouseEnter:Connect(function()
-                    TweenService:Create(toggleFrame, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor, Size = UDim2.new(1, -18, 0, 42)}):Play()
+                toggleButton.MouseEnter:Connect(function()
+                    TweenService:Create(toggleButton, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.accentColor, Size = UDim2.new(1, -18, 0, 47)}):Play()
                 end)
 
-                toggleFrame.MouseLeave:Connect(function()
-                    TweenService:Create(toggleFrame, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor, Size = UDim2.new(1, -20, 0, 40)}):Play()
+                toggleButton.MouseLeave:Connect(function()
+                    TweenService:Create(toggleButton, TweenInfo.new(config.animationSpeed), {BackgroundColor3 = config.darkColor, Size = UDim2.new(1, -20, 0, 45)}):Play()
                 end)
 
-                toggleFrame.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        value = not value
-                        TweenService:Create(toggleIndicator, TweenInfo.new(config.animationSpeed), {
-                            BackgroundColor3 = value and config.accentColor or Color3.fromRGB(80, 80, 80)
-                        }):Play()
-                        pcall(callback, value)
-                    end
+                toggleButton.MouseButton1Click:Connect(function()
+                    value = not value
+                    local targetPos = value and UDim2.new(0, 26, 0.5, -10) or UDim2.new(0, 4, 0.5, -10)
+                    local targetColor = value and config.accentColor or config.textColor
+                    TweenService:Create(toggleIndicator, TweenInfo.new(config.animationSpeed), {Position = targetPos, BackgroundColor3 = targetColor}):Play()
+                    pcall(callback, value)
                 end)
 
                 function toggle:SetValue(newValue)
                     value = newValue
-                    TweenService:Create(toggleIndicator, TweenInfo.new(config.animationSpeed), {
-                        BackgroundColor3 = value and config.accentColor or Color3.fromRGB(80, 80, 80)
-                    }):Play()
+                    local targetPos = value and UDim2.new(0, 26, 0.5, -10) or UDim2.new(0, 4, 0.5, -10)
+                    local targetColor = value and config.accentColor or config.textColor
+                    TweenService:Create(toggleIndicator, TweenInfo.new(config.animationSpeed), {Position = targetPos, BackgroundColor3 = targetColor}):Play()
                     pcall(callback, value)
                 end
+
+                applyButtonEffects(toggleButton, config.accentColor)
 
                 return toggle
             end
@@ -638,14 +691,14 @@ function GojoUI:CreateWindow(title)
             function section:NewLabel(text)
                 local label = Instance.new("TextLabel")
                 label.Name = "Label"
-                label.Size = UDim2.new(1, -20, 0, 20)
-                label.Position = UDim2.new(0, 10, 0, 0)
+                label.Size = UDim2.new(1, -20, 0, 25)
+                label.Position = UDim2.new(0, 10, 0, 40)
                 label.BackgroundTransparency = 1
                 label.Text = text
                 label.TextColor3 = config.textColor
                 label.TextXAlignment = Enum.TextXAlignment.Left
                 label.Font = config.font
-                label.TextSize = 14
+                label.TextSize = 15
                 label.Parent = sectionFrame
 
                 function label:Update(newText)
@@ -662,38 +715,38 @@ function GojoUI:CreateWindow(title)
 
                 local sliderFrame = Instance.new("Frame")
                 sliderFrame.Name = name
-                sliderFrame.Size = UDim2.new(1, -20, 0, 60)
+                sliderFrame.Size = UDim2.new(1, -20, 0, 70)
                 sliderFrame.BackgroundTransparency = 1
                 sliderFrame.Parent = sectionFrame
 
                 local title = Instance.new("TextLabel")
                 title.Name = "Title"
-                title.Size = UDim2.new(1, 0, 0, 20)
+                title.Size = UDim2.new(1, 0, 0, 25)
                 title.BackgroundTransparency = 1
                 title.Text = name
                 title.TextColor3 = config.textColor
                 title.TextXAlignment = Enum.TextXAlignment.Left
                 title.Font = config.font
-                title.TextSize = 14
+                title.TextSize = 15
                 title.Parent = sliderFrame
 
                 local valueLabel = Instance.new("TextLabel")
                 valueLabel.Name = "Value"
-                valueLabel.Size = UDim2.new(0, 60, 0, 20)
+                valueLabel.Size = UDim2.new(0, 60, 0, 25)
                 valueLabel.Position = UDim2.new(1, -60, 0, 0)
                 valueLabel.BackgroundTransparency = 1
                 valueLabel.Text = tostring(value)
-                valueLabel.TextColor3 = config.accentColor
+                valueLabel.Text EvangelismColor3 = config.accentColor
                 valueLabel.TextXAlignment = Enum.TextXAlignment.Right
                 valueLabel.Font = config.font
-                valueLabel.TextSize = 14
+                valueLabel.TextSize = 15
                 valueLabel.Parent = sliderFrame
 
                 local track = Instance.new("Frame")
                 track.Name = "Track"
-                track.Size = UDim2.new(1, 0, 0, 4)
-                track.Position = UDim2.new(0, 0, 0, 30)
-                track.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+                track.Size = UDim2.new(1, 0, 0, 6)
+                track.Position = UDim2.new(0, 0, 0, 35)
+                track.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
                 track.Parent = sliderFrame
 
                 local trackCorner = Instance.new("UICorner")
@@ -712,8 +765,8 @@ function GojoUI:CreateWindow(title)
 
                 local handle = Instance.new("TextButton")
                 handle.Name = "Handle"
-                handle.Size = UDim2.new(0, 16, 0, 16)
-                handle.Position = UDim2.new(fill.Size.X.Scale, -8, 0.5, -8)
+                handle.Size = UDim2.new(0, 18, 0, 18)
+                handle.Position = UDim2.new(fill.Size.X.Scale, -9, 0.5, -9)
                 handle.BackgroundColor3 = config.textColor
                 handle.Text = ""
                 handle.Parent = track
@@ -730,7 +783,7 @@ function GojoUI:CreateWindow(title)
                     value = math.floor(minValue + (maxValue - minValue) * relativeX)
                     valueLabel.Text = tostring(value)
                     fill.Size = UDim2.new(relativeX, 0, 1, 0)
-                    handle.Position = UDim2.new(relativeX, -8, 0.5, -8)
+                    handle.Position = UDim2.new(relativeX, -9, 0.5, -9)
                     pcall(callback, value)
                 end
 
@@ -759,28 +812,30 @@ function GojoUI:CreateWindow(title)
                     local relativeX = (value - minValue) / (maxValue - minValue)
                     valueLabel.Text = tostring(value)
                     fill.Size = UDim2.new(relativeX, 0, 1, 0)
-                    handle.Position = UDim2.new(relativeX, -8, 0.5, -8)
+                    handle.Position = UDim2.new(relativeX, -9, 0.5, -9)
                     pcall(callback, value)
                 end
 
                 return slider
             end
 
-            -- ColorPicker element (New)
+            -- ColorPicker element
             function section:NewColorPicker(name, defaultColor, callback)
                 local colorPicker = {}
                 local value = defaultColor or Color3.fromRGB(255, 255, 255)
                 local isOpen = false
 
-                local pickerFrame = Instance.new("Frame")
-                pickerFrame.Name = name
-                pickerFrame.Size = UDim2.new(1, -20, 0, 40)
-                pickerFrame.BackgroundColor3 = config.darkColor
-                pickerFrame.Parent = sectionFrame
+                local pickerButton = Instance.new("TextButton")
+                pickerButton.Name = name
+                pickerButton.Size = UDim2.new(1, -20, 0, 45)
+                pickerButton.Position = UDim2.new(0, 10, 0, 40)
+                pickerButton.BackgroundColor3 = config.darkColor
+                pickerButton.Text = ""
+                pickerButton.Parent = sectionFrame
 
                 local corner = Instance.new("UICorner")
                 corner.CornerRadius = config.cornerRadius
-                corner.Parent = pickerFrame
+                corner.Parent = pickerButton
 
                 local title = Instance.new("TextLabel")
                 title.Name = "Title"
@@ -791,15 +846,15 @@ function GojoUI:CreateWindow(title)
                 title.TextColor3 = config.textColor
                 title.TextXAlignment = Enum.TextXAlignment.Left
                 title.Font = config.font
-                title.TextSize = 14
-                title.Parent = pickerFrame
+                title.TextSize = 15
+                title.Parent = pickerButton
 
                 local colorIndicator = Instance.new("Frame")
                 colorIndicator.Name = "ColorIndicator"
                 colorIndicator.Size = UDim2.new(0, 24, 0, 24)
-                colorIndicator.Position = UDim2.new(1, -30, 0.5, -12)
+                colorIndicator.Position = UDim2.new(1, -60, 0.5, -12)
                 colorIndicator.BackgroundColor3 = value
-                colorIndicator.Parent = pickerFrame
+                colorIndicator.Parent = pickerButton
 
                 local indicatorCorner = Instance.new("UICorner")
                 indicatorCorner.CornerRadius = UDim.new(0, 4)
@@ -808,7 +863,7 @@ function GojoUI:CreateWindow(title)
                 local pickerPanel = Instance.new("Frame")
                 pickerPanel.Name = "PickerPanel"
                 pickerPanel.Size = UDim2.new(1, -20, 0, 0)
-                pickerPanel.Position = UDim2.new(0, 10, 0, 40)
+                pickerPanel.Position = UDim2.new(0, 10, 0, 45)
                 pickerPanel.BackgroundColor3 = config.lightColor
                 pickerPanel.Visible = false
                 pickerPanel.Parent = sectionFrame
@@ -839,19 +894,61 @@ function GojoUI:CreateWindow(title)
                 hueCorner.CornerRadius = UDim.new(0, 4)
                 hueCorner.Parent = hueBar
 
-                pickerFrame.InputBegan:Connect(function(input)
+                local hueHandle = Instance.new("Frame")
+                hueHandle.Size = UDim2.new(0, 4, 1, 4)
+                hueHandle.Position = UDim2.new(0, -2, 0, -2)
+                hueHandle.BackgroundColor3 = config.textColor
+                hueHandle.Parent = hueBar
+
+                local hueHandleCorner = Instance.new("UICorner")
+                hueHandleCorner.CornerRadius = UDim.new(1, 0)
+                hueHandleCorner.Parent = hueHandle
+
+                local dragging = false
+
+                local function updateHue(input)
+                    local relativeX = (input.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X
+                    relativeX = math.clamp(relativeX, 0, 1)
+                    local hue = relativeX
+                    local h, s, v = value:ToHSV()
+                    value = Color3.fromHSV(hue, s, v)
+                    colorIndicator.BackgroundColor3 = value
+                    hueHandle.Position = UDim2.new(relativeX, -2, 0, -2)
+                    pcall(callback, value)
+                end
+
+                hueBar.MouseButton1Down:Connect(function(input)
+                    dragging = true
+                    updateHue(input)
+                end)
+
+                table.insert(connections, UserInputService.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        isOpen = not isOpen
-                        pickerPanel.Visible = isOpen
-                        TweenService:Create(pickerPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, isOpen and 100 or 0)}):Play()
+                        dragging = false
                     end
+                end))
+
+                table.insert(connections, UserInputService.InputChanged:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        updateHue(input)
+                    end
+                end))
+
+                pickerButton.MouseButton1Click:Connect(function()
+                    isOpen = not isOpen
+                    pickerPanel.Visible = isOpen
+                    TweenService:Create(pickerPanel, TweenInfo.new(config.animationSpeed), {Size = UDim2.new(1, -20, 0, isOpen and 120 or 0)}):Play()
                 end)
 
                 function colorPicker:SetValue(newColor)
                     value = newColor
                     colorIndicator.BackgroundColor3 = value
+                    local h, _, _ = value:ToHSV()
+                    hueHandle.Position = UDim2.new(h, -2, 0, -2)
                     pcall(callback, value)
                 end
+
+                applyButtonEffects(pickerButton, config.accentColor)
 
                 return colorPicker
             end
