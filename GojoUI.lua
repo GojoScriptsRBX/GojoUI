@@ -1,5 +1,5 @@
--- GojoUI Library for Roblox
--- Inspired by Kavo UI, minimalistic and functional with animations
+-- GojoUI Library for Roblox Injectors
+-- Minimalistic, functional, with animations, inspired by Kavo UI
 local GojoUI = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -9,7 +9,7 @@ local function createScreenGui()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "GojoUI"
 	screenGui.ResetOnSpawn = false
-	screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 	return screenGui
 end
 
@@ -30,22 +30,30 @@ function GojoUI:CreateWindow(title)
 	local closeButton = Instance.new("TextButton")
 	local content = Instance.new("Frame")
 	local layout = Instance.new("UIListLayout")
+	local corner = Instance.new("UICorner")
 
 	-- Window Setup
 	window.Name = "GojoWindow"
-	window.Size = UDim2.new(0, 300, 0, 400)
-	window.Position = UDim2.new(0.5, -150, 0.5, -200)
-	window.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	window.Size = UDim2.new(0, 250, 0, 350)
+	window.Position = UDim2.new(0.5, -125, 0.5, -175)
+	window.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 	window.BorderSizePixel = 0
 	window.ClipsDescendants = true
 	window.Parent = screenGui
 
+	-- Rounded Corners
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = window
+
 	-- Title Bar
 	titleBar.Name = "TitleBar"
 	titleBar.Size = UDim2.new(1, 0, 0, 30)
-	titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 	titleBar.BorderSizePixel = 0
 	titleBar.Parent = window
+	local titleBarCorner = Instance.new("UICorner")
+	titleBarCorner.CornerRadius = UDim.new(0, 8)
+	titleBarCorner.Parent = titleBar
 
 	-- Title Text
 	titleText.Name = "TitleText"
@@ -53,8 +61,8 @@ function GojoUI:CreateWindow(title)
 	titleText.Position = UDim2.new(0.05, 0, 0, 0)
 	titleText.BackgroundTransparency = 1
 	titleText.Text = title or "GojoUI"
-	titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	titleText.TextSize = 16
+	titleText.TextColor3 = Color3.fromRGB(200, 200, 200)
+	titleText.TextSize = 14
 	titleText.Font = Enum.Font.GothamBold
 	titleText.TextXAlignment = Enum.TextXAlignment.Left
 	titleText.Parent = titleBar
@@ -65,8 +73,8 @@ function GojoUI:CreateWindow(title)
 	closeButton.Position = UDim2.new(1, -30, 0, 0)
 	closeButton.BackgroundTransparency = 1
 	closeButton.Text = "X"
-	closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
-	closeButton.TextSize = 16
+	closeButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+	closeButton.TextSize = 14
 	closeButton.Font = Enum.Font.GothamBold
 	closeButton.Parent = titleBar
 
@@ -118,36 +126,39 @@ function GojoUI:CreateWindow(title)
 
 	-- Close Button Functionality
 	closeButton.MouseButton1Click:Connect(function()
-		createTween(window, {Size = UDim2.new(0, 300, 0, 0)}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In).Completed:Connect(function()
+		createTween(window, {Size = UDim2.new(0, 250, 0, 0)}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In).Completed:Connect(function()
 			screenGui:Destroy()
 		end)
 	end)
 
 	-- Window Animation
-	window.Size = UDim2.new(0, 300, 0, 0)
-	createTween(window, {Size = UDim2.new(0, 300, 0, 400)}, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	window.Size = UDim2.new(0, 250, 0, 0)
+	createTween(window, {Size = UDim2.new(0, 250, 0, 350)}, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	-- Window API
 	local windowAPI = {}
 
 	function windowAPI:CreateButton(text, callback)
 		local button = Instance.new("TextButton")
+		local buttonCorner = Instance.new("UICorner")
 		button.Name = "Button"
 		button.Size = UDim2.new(1, 0, 0, 30)
-		button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 		button.BorderSizePixel = 0
 		button.Text = text or "Button"
-		button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		button.TextSize = 14
+		button.TextColor3 = Color3.fromRGB(200, 200, 200)
+		button.TextSize = 12
 		button.Font = Enum.Font.Gotham
 		button.Parent = content
+		buttonCorner.CornerRadius = UDim.new(0, 5)
+		buttonCorner.Parent = button
 
 		-- Button Animation
 		button.MouseEnter:Connect(function()
-			createTween(button, {BackgroundColor3 = Color3.fromRGB(70, 70, 70)}, 0.2)
+			createTween(button, {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}, 0.2)
 		end)
 		button.MouseLeave:Connect(function()
-			createTween(button, {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}, 0.2)
+			createTween(button, {BackgroundColor3 = Color3.fromRGB(45, 45, 45)}, 0.2)
 		end)
 
 		-- Button Click
@@ -162,23 +173,26 @@ function GojoUI:CreateWindow(title)
 
 	function windowAPI:CreateTextBox(placeholder, callback)
 		local textBox = Instance.new("TextBox")
+		local textBoxCorner = Instance.new("UICorner")
 		textBox.Name = "TextBox"
 		textBox.Size = UDim2.new(1, 0, 0, 30)
-		textBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		textBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 		textBox.BorderSizePixel = 0
 		textBox.Text = ""
 		textBox.PlaceholderText = placeholder or "Enter text..."
-		textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-		textBox.TextSize = 14
+		textBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+		textBox.TextSize = 12
 		textBox.Font = Enum.Font.Gotham
 		textBox.Parent = content
+		textBoxCorner.CornerRadius = UDim.new(0, 5)
+		textBoxCorner.Parent = textBox
 
 		-- TextBox Animation
 		textBox.Focused:Connect(function()
-			createTween(textBox, {BackgroundColor3 = Color3.fromRGB(70, 70, 70)}, 0.2)
+			createTween(textBox, {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}, 0.2)
 		end)
 		textBox.FocusLost:Connect(function()
-			createTween(textBox, {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}, 0.2)
+			createTween(textBox, {BackgroundColor3 = Color3.fromRGB(45, 45, 45)}, 0.2)
 			if callback then
 				callback(textBox.Text)
 			end
@@ -191,6 +205,7 @@ function GojoUI:CreateWindow(title)
 		local toggleFrame = Instance.new("Frame")
 		local toggleLabel = Instance.new("TextLabel")
 		local toggleButton = Instance.new("TextButton")
+		local toggleButtonCorner = Instance.new("UICorner")
 		local toggleState = default or false
 
 		toggleFrame.Name = "Toggle"
@@ -202,8 +217,8 @@ function GojoUI:CreateWindow(title)
 		toggleLabel.Size = UDim2.new(0.8, 0, 1, 0)
 		toggleLabel.BackgroundTransparency = 1
 		toggleLabel.Text = text or "Toggle"
-		toggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		toggleLabel.TextSize = 14
+		toggleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+		toggleLabel.TextSize = 12
 		toggleLabel.Font = Enum.Font.Gotham
 		toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
 		toggleLabel.Parent = toggleFrame
@@ -211,15 +226,17 @@ function GojoUI:CreateWindow(title)
 		toggleButton.Name = "ToggleButton"
 		toggleButton.Size = UDim2.new(0, 30, 0, 20)
 		toggleButton.Position = UDim2.new(1, -30, 0.5, -10)
-		toggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+		toggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
 		toggleButton.BorderSizePixel = 0
 		toggleButton.Text = ""
 		toggleButton.Parent = toggleFrame
+		toggleButtonCorner.CornerRadius = UDim.new(0, 5)
+		toggleButtonCorner.Parent = toggleButton
 
 		-- Toggle Functionality
 		toggleButton.MouseButton1Click:Connect(function()
 			toggleState = not toggleState
-			createTween(toggleButton, {BackgroundColor3 = toggleState and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)}, 0.2)
+			createTween(toggleButton, {BackgroundColor3 = toggleState and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)}, 0.2)
 			if callback then
 				callback(toggleState)
 			end
